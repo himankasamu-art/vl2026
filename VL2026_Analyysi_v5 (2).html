@@ -1,0 +1,2384 @@
+<!DOCTYPE html>
+<html lang="fi"><head><meta charset="utf-8"><title>VL2026 Analyysi</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=JetBrains+Mono:wght@400;500&display=swap');
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#080A0C;--s1:#0D1117;--s2:#111820;--s3:#0A1520;
+  --bdr:#1E2D3D;--bdr2:#243545;--tx:#E8EDF2;--mu:#6B7E8F;--dim:#3A4D5C;
+  --gr:#00C896;--grbg:#001F17;--grbdr:#003D2E;
+  --gd:#F0B429;--gdbg:#1A1200;--gdbdr:#3D2D00;
+  --rd:#FF4757;--rdbg:#1A0008;--rdbdr:#3D0015;
+  --bl:#3B82F6;--am:#FF8C42;
+  --mono:'JetBrains Mono',monospace;--sans:'Syne',sans-serif
+}
+body{background:var(--bg);color:var(--tx);font-family:var(--sans);font-size:12px;min-height:100vh}
+.nav{display:flex;gap:1px;background:var(--s1);border-bottom:1px solid var(--bdr);overflow-x:auto;position:sticky;top:0;z-index:20;scrollbar-width:none}
+.nav::-webkit-scrollbar{display:none}
+.nt{display:flex;align-items:center;gap:5px;padding:9px 12px;font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--mu);cursor:pointer;white-space:nowrap;border:none;border-bottom:2px solid transparent;background:transparent;font-family:var(--sans)}
+.nt:hover{color:var(--tx);background:var(--s2)}.nt.on{color:var(--gr);border-bottom-color:var(--gr);background:var(--s2)}
+.nt.upd{color:var(--gd)}.nt.upd.on{color:var(--gd);border-bottom-color:var(--gd)}
+.nt.trk{color:var(--am)}.nt.trk.on{color:var(--am);border-bottom-color:var(--am)}
+.nt-dot{width:4px;height:4px;border-radius:50%;background:currentColor;flex-shrink:0}
+.savebar{display:flex;align-items:center;gap:7px;padding:4px 12px;font-size:9px;font-family:var(--mono);position:sticky;top:44px;z-index:19;transition:all .2s}
+.savebar.saving{background:var(--gdbg);border-bottom:1px solid var(--gdbdr);color:var(--gd)}
+.savebar.saved{background:var(--grbg);border-bottom:1px solid var(--grbdr);color:var(--gr)}
+.savebar.hide{display:none}
+.sdot{width:5px;height:5px;border-radius:50%;background:currentColor}
+.pane{padding:12px;display:none}.pane.on{display:block}
+/* KPI */
+.krow{display:grid;gap:7px;margin-bottom:10px}
+.k4{grid-template-columns:repeat(4,1fr)}.k5{grid-template-columns:repeat(5,1fr)}.k6{grid-template-columns:repeat(6,1fr)}
+.kpi{background:var(--s1);border:1px solid var(--bdr);border-radius:7px;padding:10px 12px;position:relative;overflow:hidden}
+.kpi::before{content:'';position:absolute;top:0;left:0;right:0;height:2px}
+.kpi.g::before{background:var(--gr)}.kpi.gd::before{background:var(--gd)}.kpi.r::before{background:var(--rd)}.kpi.b::before{background:var(--bl)}.kpi.am::before{background:var(--am)}
+.kl{font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--mu);margin-bottom:3px}
+.kv{font-family:var(--mono);font-size:18px;font-weight:500}
+.kv.g{color:var(--gr)}.kv.gd{color:var(--gd)}.kv.r{color:var(--rd)}.kv.b{color:var(--bl)}.kv.am{color:var(--am)}
+.ks{font-size:9px;color:var(--dim);margin-top:2px;font-family:var(--mono)}
+/* Controls */
+.ctrl{display:flex;gap:7px;align-items:center;flex-wrap:wrap;margin-bottom:10px}
+.lbl{font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--mu)}
+select,input[type=number],input[type=text]{background:var(--s2);border:1px solid var(--bdr);border-radius:5px;color:var(--tx);font-family:var(--mono);font-size:11px;padding:5px 8px;outline:none}
+select:focus,input:focus{border-color:var(--gr)}
+input[type=range]{-webkit-appearance:none;height:3px;background:var(--bdr2);border-radius:2px;outline:none;flex:1;border:none;padding:0;cursor:pointer}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:13px;height:13px;border-radius:50%;background:var(--gr);cursor:pointer;border:2px solid var(--bg)}
+/* Cards */
+.card{background:var(--s1);border:1px solid var(--bdr);border-radius:7px;padding:11px;margin-bottom:8px}
+.card:last-child{margin-bottom:0}
+.ctitle{font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--mu);margin-bottom:9px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px}
+/* Grid */
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+.g3{display:grid;grid-template-columns:repeat(3,1fr);gap:9px}
+/* Tables */
+.tw{overflow-x:auto;border-radius:5px;border:1px solid var(--bdr)}
+table{width:100%;border-collapse:collapse;font-size:11px}
+th{font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--mu);text-align:right;padding:6px 8px;border-bottom:1px solid var(--bdr);white-space:nowrap;background:var(--s1)}
+th.L{text-align:left}
+td{padding:5px 8px;text-align:right;border-bottom:1px solid var(--bdr);font-family:var(--mono);font-size:11px;color:var(--tx)}
+td.L{text-align:left;font-family:var(--sans);font-weight:600}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:rgba(255,255,255,.02)}
+.pos{color:var(--gr)}.neg{color:var(--rd)}.neu{color:var(--mu)}
+/* Prob bars */
+.pbars{display:flex;gap:7px;margin-bottom:10px}
+.pbar-w{flex:1}
+.pbar-l{font-size:9px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--mu);margin-bottom:3px}
+.pbar-bg{height:38px;background:var(--s2);border-radius:5px;border:1px solid var(--bdr);overflow:hidden}
+.pbar-f{height:100%;display:flex;align-items:center;justify-content:flex-end;padding-right:9px;transition:width .4s}
+.pbar-v{font-family:var(--mono);font-size:14px;font-weight:500}
+.pbar-fair{font-size:10px;color:var(--mu);margin-top:2px;font-family:var(--mono)}
+/* Score matrix */
+.sm td,.sm th{padding:3px 4px;min-width:28px;font-size:10px}
+.hlite{background:rgba(0,200,150,.18)!important;color:var(--gr)!important;font-weight:700}
+/* Buttons */
+.btn{font-size:10px;font-weight:700;padding:6px 13px;border-radius:5px;border:1px solid var(--bdr);background:transparent;color:var(--mu);cursor:pointer;font-family:var(--sans);transition:all .12s}
+.btn:hover{border-color:var(--gr);color:var(--gr)}
+.btn-g{border-color:var(--grbdr);background:var(--grbg);color:var(--gr)}
+.btn-gd{border-color:var(--gdbdr);background:var(--gdbg);color:var(--gd)}
+.btn-r{border-color:var(--rdbdr);color:var(--rd)}
+.btn-r:hover{background:var(--rdbg)}
+/* Bet buttons row */
+.bet-row{display:flex;gap:5px;flex-wrap:wrap;margin-top:9px;padding-top:9px;border-top:1px solid var(--bdr)}
+.bbt{font-size:10px;font-weight:700;padding:5px 10px;border-radius:5px;border:1px solid var(--bdr2);background:var(--s2);color:var(--mu);cursor:pointer;font-family:var(--mono);transition:all .12s}
+.bbt:hover{border-color:var(--gr);color:var(--gr);background:var(--grbg)}
+.bbt.active{border-color:var(--gr);background:var(--grbg);color:var(--gr)}
+/* Bet modal */
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:100;display:flex;align-items:center;justify-content:center;display:none}
+.modal-bg.show{display:flex}
+.modal{background:var(--s1);border:1px solid var(--bdr);border-radius:10px;padding:18px;width:320px;max-width:95vw}
+.modal-title{font-size:12px;font-weight:800;margin-bottom:12px}
+.mfield{display:flex;flex-direction:column;gap:4px;margin-bottom:9px}
+.mfield label{font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--mu)}
+.mfield input{width:100%}
+/* Meta strip */
+.mstrip{background:var(--s1);border:1px solid var(--bdr);border-left:3px solid var(--gr);border-radius:6px;padding:7px 11px;font-size:10px;color:var(--mu);margin-bottom:10px;font-family:var(--mono);display:flex;gap:12px;flex-wrap:wrap;line-height:2}
+.mstrip strong{color:var(--tx);font-family:var(--sans);font-weight:700}
+/* Active strip */
+.astrip{background:var(--gdbg);border:1px solid var(--gdbdr);border-radius:5px;padding:6px 11px;font-size:10px;color:var(--gd);font-family:var(--mono);margin-bottom:9px;line-height:1.9}
+/* Nudge */
+.ngrid{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin-bottom:9px}
+.nc{background:var(--s1);border:1px solid var(--bdr);border-radius:7px;padding:9px 11px}
+.nc-name{font-size:9px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--mu);margin-bottom:5px}
+.nc-ctrl{display:flex;align-items:center;gap:4px}
+.nb{height:22px;border-radius:4px;border:1px solid var(--bdr2);background:var(--s2);color:var(--tx);font-size:11px;font-weight:700;cursor:pointer;font-family:var(--mono);padding:0 6px}
+.nb:hover{border-color:var(--gr);color:var(--gr);background:var(--grbg)}
+.nv{flex:1;text-align:center;font-family:var(--mono);font-size:12px;font-weight:500}
+.nv.up{color:var(--gr)}.nv.dn{color:var(--rd)}
+.nbar{height:3px;border-radius:2px;margin-top:5px;background:var(--bdr2);position:relative}
+.nfill{height:100%;border-radius:2px;position:absolute;transition:all .2s}
+.nhint{font-size:9px;color:var(--dim);margin-top:3px;font-family:var(--mono)}
+/* Preset buttons */
+.pset{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;align-items:center}
+.pbtn{font-size:10px;font-weight:700;padding:5px 11px;border-radius:5px;border:1px solid var(--bdr);background:transparent;color:var(--mu);cursor:pointer;font-family:var(--sans)}
+.pbtn:hover{border-color:var(--gr);color:var(--gr)}.pbtn.on{border-color:var(--grbdr);background:var(--grbg);color:var(--gr)}
+/* Weight panels */
+.wp{background:var(--s1);border:1px solid var(--bdr);border-radius:7px;padding:11px 13px;margin-bottom:7px}
+.wp-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:9px}
+.wp-name{font-size:11px;font-weight:800}
+.sl-row{display:flex;align-items:center;gap:9px;margin-bottom:7px}
+.sl-l{font-size:9px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--mu);min-width:130px}
+.sl-v{font-family:var(--mono);font-size:11px;font-weight:500;min-width:36px;text-align:right;color:var(--gr)}
+.wtot{font-size:10px;padding-top:6px;border-top:1px solid var(--bdr);font-family:var(--mono);margin-top:3px}
+.wtot.ok{color:var(--gr)}.wtot.bad{color:var(--rd)}
+/* Lineup */
+.lu-card{background:var(--s1);border:1px solid var(--bdr);border-radius:7px;overflow:hidden}
+.lu-head{display:flex;justify-content:space-between;align-items:center;padding:7px 11px;background:var(--s2);border-bottom:1px solid var(--bdr)}
+.lu-name{font-size:11px;font-weight:800}
+.lu-body{padding:7px 9px}
+.pitch{background:#0a1f0a;border:1px solid #1a3a1a;border-radius:4px;padding:4px 3px;margin-bottom:6px}
+.prow{display:flex;justify-content:center;gap:3px;margin-bottom:3px}.prow:last-child{margin-bottom:0}
+.ppl{display:flex;flex-direction:column;align-items:center;gap:1px;min-width:36px}
+.ppl-dot{width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:7px;font-weight:700;border:1.5px solid}
+.ppl-nm{font-size:7px;font-weight:600;text-align:center;max-width:36px;line-height:1.2;color:var(--tx)}
+.GK .ppl-dot{background:rgba(240,180,41,.12);border-color:var(--gd);color:var(--gd)}
+.DEF .ppl-dot{background:rgba(59,130,246,.12);border-color:var(--bl);color:var(--bl)}
+.MID .ppl-dot{background:rgba(0,200,150,.12);border-color:var(--gr);color:var(--gr)}
+.ATT .ppl-dot{background:rgba(255,140,66,.12);border-color:var(--am);color:var(--am)}
+.ppl.ch .ppl-dot{border-color:var(--gd);box-shadow:0 0 0 2px var(--gd)}
+.pos-rows{display:flex;flex-direction:column;gap:2px;margin-bottom:6px}
+.pos-row{display:flex;align-items:center;gap:4px;padding:3px 5px;background:var(--s2);border:1px solid var(--bdr);border-radius:3px}
+.pos-row.ch{border-color:var(--gdbdr);background:var(--gdbg)}
+.pos-tag{font-size:8px;font-weight:700;width:22px;text-align:center;flex-shrink:0;text-transform:uppercase}
+.GKt{color:var(--gd)}.DEFt{color:var(--bl)}.MIDt{color:var(--gr)}.ATTt{color:var(--am)}
+.pos-sel{flex:1;background:transparent;border:none;color:var(--tx);font-family:var(--sans);font-size:10px;font-weight:600;outline:none;cursor:pointer;min-width:0}
+.pos-sel option{background:var(--s1)}
+.impact-lbl{font-size:8px;font-family:var(--mono);color:var(--rd);flex-shrink:0}
+.bench-lbl{font-size:8px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--mu);margin-bottom:3px}
+.bench-list{display:flex;flex-wrap:wrap;gap:2px}
+.bpl{font-size:7.5px;padding:1px 5px;border-radius:3px;background:var(--s2);border:1px solid var(--bdr);color:var(--mu);font-weight:600}
+.bpl.GK{border-color:rgba(240,180,41,.2);color:rgba(240,180,41,.6)}
+.bpl.DEF{border-color:rgba(59,130,246,.2);color:rgba(59,130,246,.6)}
+.bpl.MID{border-color:rgba(0,200,150,.2);color:rgba(0,200,150,.6)}
+.bpl.ATT{border-color:rgba(255,140,66,.2);color:rgba(255,140,66,.6)}
+/* HE viz */
+.he-row{display:flex;align-items:center;gap:9px;padding:5px 0;border-bottom:1px solid var(--bdr)}
+.he-row:last-child{border-bottom:none}
+.he-name{min-width:120px;font-weight:600;font-size:11px}
+.he-track{flex:1;height:7px;background:var(--s2);border-radius:3px;position:relative;overflow:hidden}
+.he-fill{height:100%;border-radius:3px;position:absolute}
+.he-val{font-family:var(--mono);font-size:11px;font-weight:500;min-width:44px;text-align:right}
+/* Kelly box */
+.kbox{background:var(--s3);border:1px solid var(--grbdr);border-radius:7px;padding:11px;margin-top:9px}
+.kbox-t{font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--gr);margin-bottom:7px}
+/* Update / tracking form */
+.form-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:10px}
+.fgrp{display:flex;flex-direction:column;gap:4px}
+.fgrp label{font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--mu)}
+.fgrp input,.fgrp select{width:100%}
+.warn{background:var(--rdbg);border:1px solid var(--rdbdr);border-radius:5px;padding:6px 10px;font-size:11px;color:var(--rd);font-family:var(--mono);margin-bottom:6px}
+/* Direction indicator */
+.diff-pos{color:var(--gr)}.diff-neg{color:var(--rd)}.diff-neu{color:var(--mu)}
+/* Track badges */
+.badge{display:inline-block;font-size:9px;font-weight:700;padding:2px 7px;border-radius:3px}
+.b1{background:rgba(0,200,150,.12);color:var(--gr);border:1px solid var(--grbdr)}
+.bx{background:rgba(240,180,41,.12);color:var(--gd);border:1px solid var(--gdbdr)}
+.b2{background:rgba(255,71,87,.12);color:var(--rd);border:1px solid var(--rdbdr)}
+.bo{background:rgba(59,130,246,.12);color:var(--bl);border:1px solid rgba(59,130,246,.3)}
+.bopen{background:var(--s2);color:var(--mu);border:1px solid var(--bdr)}
+/* ROI chart bars */
+.bar-wrap{display:flex;align-items:flex-end;gap:3px;height:60px;margin-top:8px}
+.bar-item{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px}
+.bar-b{border-radius:3px 3px 0 0;width:100%;min-height:2px}
+.bar-lbl{font-size:8px;color:var(--mu);font-family:var(--mono);text-align:center;white-space:nowrap}
+/* Round selector */
+.round-info{background:var(--gdbg);border:1px solid var(--gdbdr);border-radius:5px;padding:6px 10px;font-size:10px;color:var(--gd);font-family:var(--mono);margin-bottom:9px}
+::-webkit-scrollbar{width:4px;height:4px}
+::-webkit-scrollbar-track{background:var(--bg)}
+::-webkit-scrollbar-thumb{background:var(--bdr2);border-radius:4px}
+</style>
+</head>
+<body>
+
+<div class="nav">
+  <button class="nt on" data-tab="match">Analyysi</button>
+  <button class="nt" data-tab="lineups">Kokoonpanot</button>
+  <button class="nt" data-tab="weights">Painotukset</button>
+  <button class="nt" data-tab="nudges">Voimasäädöt</button>
+  <button class="nt" data-tab="asian">Aasialaiset</button>
+  <button class="nt" data-tab="goals">Maalimäärät</button>
+  <button class="nt" data-tab="calib">Kalibrointi</button>
+  <button class="nt upd" data-tab="update">↑ Päivitys</button>
+  <button class="nt trk" data-tab="track">★ Seuranta</button>
+  <button class="nt" data-tab="table" style="color:var(--bl)">⊞ Taulukko</button>
+  <button class="nt" data-tab="players" style="color:#A78BFA">⊕ Pelaajadata</button>
+</div>
+<div class="savebar hide" id="savebar"><div class="sdot"></div><span id="savemsg"></span></div>
+
+<!-- ANALYYSI -->
+<div class="pane on" id="pane-match">
+  <div class="ctrl">
+    <span class="lbl">Koti</span><select id="mH" onchange="run()"></select>
+    <span class="lbl">Vieras</span><select id="mA" onchange="run()"></select>
+    <span class="lbl">Jakauma</span>
+    <select id="distMode" onchange="run()"><option value="nb">NB φ=1.098</option><option value="pois">Poisson</option></select>
+    <span class="lbl">Kierros</span>
+    <input type="number" id="roundNum" value="1" min="1" max="33" style="width:50px" onchange="updateRoundInfo();run()">
+  </div>
+  <div class="ctrl" id="oddsCtrl" style="margin-top:4px;align-items:center;gap:6px;flex-wrap:wrap">
+    <span class="lbl" style="color:var(--gd)">⚡ Kerroinliike</span>
+    <span class="lbl" style="font-size:9px;color:var(--mu)">Avaus</span>
+    <input type="number" id="odvH" placeholder="Koti" step="0.01" min="1" style="width:58px;font-size:11px;background:var(--s2);border:1px solid var(--bdr);color:var(--tx);padding:3px 5px;border-radius:4px;font-family:var(--mono)" oninput="run()">
+    <input type="number" id="odvA" placeholder="Vieras" step="0.01" min="1" style="width:58px;font-size:11px;background:var(--s2);border:1px solid var(--bdr);color:var(--tx);padding:3px 5px;border-radius:4px;font-family:var(--mono)" oninput="run()">
+    <span class="lbl" style="font-size:9px;color:var(--mu)">Sulku</span>
+    <input type="number" id="scvH" placeholder="Koti" step="0.01" min="1" style="width:58px;font-size:11px;background:var(--s2);border:1px solid var(--bdr);color:var(--tx);padding:3px 5px;border-radius:4px;font-family:var(--mono)" oninput="run()">
+    <input type="number" id="scvA" placeholder="Vieras" step="0.01" min="1" style="width:58px;font-size:11px;background:var(--s2);border:1px solid var(--bdr);color:var(--tx);padding:3px 5px;border-radius:4px;font-family:var(--mono)" oninput="run()">
+    <span id="mktSignal" style="font-size:10px;font-family:var(--mono);color:var(--mu);margin-left:4px"></span>
+    <button onclick="document.getElementById('odvH').value='';document.getElementById('odvA').value='';document.getElementById('scvH').value='';document.getElementById('scvA').value='';document.getElementById('mktSignal').textContent='';run()" style="font-size:9px;padding:3px 8px;background:var(--s2);border:1px solid var(--bdr);color:var(--mu);border-radius:4px;cursor:pointer">✕ Tyhjennä</button>
+  </div>
+  <div id="roundInfoStrip" class="round-info" style="display:none"></div>
+  <div id="astrip" class="astrip" style="display:none"></div>
+  <div id="mmeta" class="mstrip"></div>
+  <div class="pbars" id="probBars"></div>
+  <div class="krow k4" id="cMeta"></div>
+  <div class="g3">
+    <div class="card" style="margin:0"><div class="ctitle">Tulosmatriisi</div><div class="tw sm" id="scoreMatrix"></div></div>
+    <div class="card" style="grid-column:span 2;margin:0"><div class="ctitle">Eurooppalainen tasoitus</div><div class="tw" id="euHcap"></div></div>
+  </div>
+  <div class="kbox">
+    <div class="kbox-t">Kelly-laskin
+      <button onclick="fillFairOdds()" style="float:right;font-size:9px;padding:3px 9px;border-radius:4px;border:1px solid var(--gdbdr);background:var(--gdbg);color:var(--gd);cursor:pointer;font-family:var(--sans);font-weight:700" title="Kopioi mallin laskemat fair-kertoimet kenttiin">⟵ Implied</button>
+    </div>
+    <div class="ctrl" style="margin-bottom:7px;gap:7px;flex-wrap:wrap">
+      <span class="lbl">1</span><input type="number" id="kO1" placeholder="1.85" step="0.01" style="width:56px" oninput="runKelly()">
+      <span class="lbl">X</span><input type="number" id="kOX" placeholder="3.40" step="0.01" style="width:56px" oninput="runKelly()">
+      <span class="lbl">2</span><input type="number" id="kO2" placeholder="3.80" step="0.01" style="width:56px" oninput="runKelly()">
+      <span class="lbl">Kohde</span>
+      <select id="kSide" onchange="updKSideLabel();runKelly()"><option value="H">1 Koti</option><option value="D">X</option><option value="A">2 Vieras</option><option value="O25">O2.5</option><option value="O35">O3.5</option><option value="U25">U2.5</option><option value="BTTS">BTTS</option><option value="AHH">AH Koti</option><option value="AHA">AH Vieras</option></select>
+      <span class="lbl">Bank</span><input type="number" id="kBank" value="500" step="10" style="width:66px" oninput="runKelly()">
+      <span class="lbl">Luottamus</span>
+      <input type="range" id="kConf" min="40" max="100" step="5" value="80" style="width:70px;flex:none" oninput="document.getElementById('kConfV').textContent=this.value+'%';runKelly()">
+      <span id="kConfV" style="font-family:var(--mono);font-size:11px;color:var(--gr);min-width:28px">80%</span>
+    </div>
+    <div id="kWarn"></div><div id="kRes"></div>
+    <!-- BET BUTTONS -->
+    <div class="bet-row" id="betBtns"></div>
+  </div>
+  <div style="font-size:10px;color:var(--mu);font-family:var(--mono);margin-top:7px" id="matchNote"></div>
+</div>
+
+<!-- KOKOONPANOT -->
+<div class="pane" id="pane-lineups">
+  <div class="card" style="margin-bottom:11px">
+    <div class="ctitle">Kokoonpanovaikutus</div>
+    <div style="display:flex;gap:14px;flex-wrap:wrap;align-items:center">
+      <div>
+        <div class="lbl" style="margin-bottom:5px">Penkkiläinen = starter × <strong id="brLabel" style="color:var(--gd)">65%</strong></div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <input type="range" id="benchRatio" min="50" max="90" step="5" value="65" style="width:120px;flex:none" oninput="updBR(this.value)">
+          <span style="font-family:var(--mono);font-size:11px;color:var(--gd);min-width:30px" id="brVal">65%</span>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="ctrl" style="margin-bottom:10px">
+    <span class="lbl">Joukkue</span>
+    <select id="luFilter" onchange="renderLineups()"><option value="all">Kaikki</option></select>
+    <button class="btn" onclick="resetLU()">Nollaa</button>
+    <button class="btn btn-g" onclick="saveAll()" style="margin-left:auto">💾 Tallenna kokoonpanot</button>
+  </div>
+  <div id="luGrid"></div>
+</div>
+
+<!-- PAINOTUKSET -->
+<div class="pane" id="pane-weights">
+  <div class="card" style="margin-bottom:11px">
+    <div class="ctitle">Aika-diskonttaus λ</div>
+    <div class="sl-row">
+      <span class="sl-l">Diskonttauskerroin</span>
+      <input type="range" id="decaySlider" min="0" max="15" step="1" value="8" oninput="updDecay(this.value)">
+      <span class="sl-v" id="decayVal">0.008</span>
+    </div>
+    <div style="display:flex;gap:3px;align-items:flex-end;height:44px;margin:7px 0 0" id="decayBars"></div>
+    <div style="display:flex;gap:3px;margin-bottom:4px" id="decayMonths"></div>
+    <div style="font-size:9px;color:var(--mu);font-family:var(--mono)" id="decayNote"></div>
+  </div>
+  <div class="pset">
+    <span class="lbl">Esiasetus</span>
+    <button class="pbtn on" id="pr-balanced" onclick="setPreset('balanced')">Tasapainoinen</button>
+    <button class="pbtn" id="pr-lc" onclick="setPreset('lc')">LC2026</button>
+    <button class="pbtn" id="pr-xg" onclick="setPreset('xg')">xG</button>
+    <button class="pbtn" id="pr-new" onclick="setPreset('new')">Nousijat</button>
+  </div>
+  <div id="roundWeightHint" class="round-info" style="display:none"></div>
+  <div id="wPanels"></div>
+</div>
+
+<!-- VOIMASÄÄDÖT -->
+<div class="pane" id="pane-nudges">
+  <div style="display:flex;gap:6px;align-items:center;margin-bottom:11px;flex-wrap:wrap">
+    <span class="lbl">Askel</span>
+    <button class="pbtn on" id="ns-1" onclick="setStep(1)">±1%</button>
+    <button class="pbtn" id="ns-3" onclick="setStep(3)">±3%</button>
+    <button class="pbtn" id="ns-5" onclick="setStep(5)">±5%</button>
+    <button class="pbtn" id="ns-8" onclick="setStep(8)">±8%</button>
+    <button class="btn btn-r" onclick="resetNudges()" style="margin-left:auto;padding:4px 10px;font-size:9px">Nollaa</button>
+  </div>
+  <div class="ngrid" id="nudgeGrid"></div>
+  <div style="font-size:10px;color:var(--mu);font-family:var(--mono)" id="nudgeSumm"></div>
+</div>
+
+<!-- AASIALAISET -->
+<div class="pane" id="pane-asian">
+  <div class="ctrl">
+    <span class="lbl">Koti</span><select id="aH" onchange="runAsian()"></select>
+    <span class="lbl">Vieras</span><select id="aA" onchange="runAsian()"></select>
+    <span class="lbl">Kerroin</span>
+    <input type="number" id="bkOdds" value="1.90" step="0.05" style="width:70px" oninput="runAsian()">
+    <span class="lbl">Puoli</span>
+    <select id="aSide" onchange="runAsian()"><option value="home">Koti</option><option value="away">Vieras</option></select>
+  </div>
+  <div class="card" style="margin-bottom:9px"><div class="ctitle">Aasialaiset tasoituslinjat</div><div id="asianLines"></div></div>
+  <div class="card"><div class="ctitle">Totaalimaalit</div><div class="tw" id="asianTotals"></div></div>
+</div>
+
+<!-- MAALIMÄÄRÄT -->
+<div class="pane" id="pane-goals">
+  <div class="ctrl">
+    <span class="lbl">Koti</span><select id="gH" onchange="runGoals()"></select>
+    <span class="lbl">Vieras</span><select id="gA" onchange="runGoals()"></select>
+  </div>
+  <div class="krow k4" id="cGoals"></div>
+  <div class="g2">
+    <div class="card" style="margin:0"><div class="ctitle">Over / Under</div><div class="tw" id="goalLines"></div></div>
+    <div class="card" style="margin:0"><div class="ctitle">BTTS ja puoliajat</div><div class="tw" id="bttsTable"></div></div>
+  </div>
+</div>
+
+<!-- KALIBROINTI -->
+<div class="pane" id="pane-calib">
+  <div class="krow k4">
+    <div class="kpi g"><div class="kl">Brier Score</div><div class="kv g" id="calBrier">—</div><div class="ks">Pinnacle VL2025: 0.5804</div></div>
+    <div class="kpi gd"><div class="kl">NB φ</div><div class="kv gd">1.098</div><div class="ks">overdispersion</div></div>
+    <div class="kpi b"><div class="kl">DC ρ</div><div class="kv b">−0.13</div><div class="ks">pienmaalipelikorjaus</div></div>
+    <div class="kpi"><div class="kl">LGA_AVG</div><div class="kv">1.475</div><div class="ks">liigakeskiarvo</div></div>
+  </div>
+  <div class="g2">
+    <div class="card" style="margin:0"><div class="ctitle">Kotietu (HE)</div><div id="heViz"></div></div>
+    <div class="card" style="margin:0">
+      <div class="ctitle">xG-data (nykyinen) <button class="btn" onclick="T('update')" style="padding:3px 8px;font-size:9px">Päivitä →</button></div>
+      <div class="tw" id="calibTable"></div>
+    </div>
+  </div>
+  <div class="card" style="margin-top:9px">
+    <div class="ctitle">Bayesilainen posterior — priori vs havainnot <span style="font-size:9px;color:var(--mu);font-weight:400;font-family:var(--mono)">N_prior=6 virtuaaliottelua</span></div>
+    <div id="bayesViz"></div>
+  </div>
+  <div class="card" style="margin-top:9px">
+    <div class="ctitle">Desiilikalibrointi — missä malli menee pieleen <span style="font-size:9px;color:var(--mu);font-weight:400;font-family:var(--mono)">vaatii ~30+ ottelua</span></div>
+    <div id="decileCalib"></div>
+  </div>
+</div>
+
+<!-- PÄIVITYS -->
+<div class="pane" id="pane-update">
+  <div class="card" style="margin-bottom:10px">
+    <div class="ctitle">
+      Data-varmuuskopio
+      <span style="font-size:9px;color:var(--mu);font-family:var(--mono);font-weight:400">Vie/tuo kaikki tulokset, vedot ja Bayesian-data</span>
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+      <button class="btn btn-g" onclick="exportData()">⬇ Vie JSON</button>
+      <button class="btn" onclick="document.getElementById('importFile').click()">⬆ Tuo JSON</button>
+      <input type="file" id="importFile" accept=".json" style="display:none" onchange="importData(this)">
+      <span style="font-size:9px;font-family:var(--mono);color:var(--mu)" id="importExportMsg"></span>
+    </div>
+    <div style="font-size:9px;font-family:var(--mono);color:var(--dim);margin-top:7px;line-height:1.8">
+      Vie JSON ennen kuin lataat uuden version tiedostosta. Tuo JSON palauttaa kaikki tulokset, vedot, xG-historia ja Bayesian-data.
+    </div>
+  </div>
+  <div class="card" style="margin-bottom:10px">
+    <div class="ctitle">
+      Syötä kierroksen tulokset + tilastot
+      <span style="font-size:9px;color:var(--mu);font-family:var(--mono);font-weight:400">Lähde: fbref.com tai Sofascore</span>
+    </div>
+    <div style="font-size:10px;font-family:var(--mono);color:var(--mu);background:var(--s2);border:1px solid var(--bdr);border-radius:5px;padding:8px 11px;margin-bottom:12px;line-height:1.9">
+      Syötä vain muuttuneet kentät — tyhjät jätetään rauhaan. <strong style="color:var(--gr)">Nudget, painotukset ja kokoonpanot säilyvät.</strong><br>
+      xG-arvot päivittyvät malliin ja vaikuttavat seuraavaan laskentaan.
+    </div>
+    <div id="updateRows"></div>
+    <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;align-items:center">
+      <button class="btn btn-g" onclick="applyUpdate()">Tallenna kaikki tulokset</button>
+      <button class="btn" onclick="resetXG()">Palauta VL2025-oletukset</button>
+      <span style="font-size:9px;font-family:var(--mono)" id="updateMsg"></span>
+    </div>
+  </div>
+  <div class="card">
+    <div class="ctitle">xG-päivityshistoria</div>
+    <div id="xgHistory" style="font-size:10px;font-family:var(--mono);color:var(--mu);line-height:2.2">Ei päivityksiä.</div>
+  </div>
+</div>
+
+<!-- SEURANTA -->
+<div class="pane" id="pane-track">
+  <div class="krow k6" id="trkKpi"></div>
+  <div class="g2" style="margin-bottom:10px">
+    <div class="card" style="margin:0">
+      <div class="ctitle">Vetohistoria <div style="display:flex;gap:5px"><button class="btn btn-g" onclick="openBetModal(null)" style="padding:3px 8px;font-size:9px">+ Uusi veto</button><button class="btn btn-r" onclick="clearBets()" style="padding:3px 8px;font-size:9px">Tyhjennä</button></div></div>
+      <div id="betHistTable"></div>
+    </div>
+    <div class="card" style="margin:0">
+      <div class="ctitle">Mallin kalibrointi (Brier)</div>
+      <div class="bar-wrap" id="brierBars"></div>
+      <div style="font-size:9px;color:var(--mu);font-family:var(--mono);margin-top:6px">0.00=täydellinen · 0.5804=Pinnacle VL2025 · 0.667=satunnainen</div>
+    </div>
+  </div>
+  <div class="g2" style="margin-bottom:10px">
+    <div class="card" style="margin:0">
+      <div class="ctitle">xG vs λ — mallin kalibrointi joukkueittain <span style="font-size:9px;color:var(--mu);font-weight:400;font-family:var(--mono)">tarvitaan ~6 peliä</span></div>
+      <div id="xgLambdaViz"></div>
+    </div>
+    <div class="card" style="margin:0">
+      <div class="ctitle">CLV markkinatyypeittäin</div>
+      <div id="clvByMarket"></div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="ctitle">
+      Otteluhistoria
+      <div style="display:flex;gap:6px">
+        <select id="trkFilter" onchange="renderTrack()" style="padding:3px 7px;font-size:9px;width:auto">
+          <option value="all">Kaikki</option><option value="correct">Malli oikeassa</option><option value="wrong">Malli väärässä</option><option value="rc">Punainen kortti</option>
+        </select>
+        <button class="btn btn-r" onclick="clearTrack()" style="padding:3px 8px;font-size:9px">Tyhjennä</button>
+      </div>
+    </div>
+    <div id="trkTable"></div>
+  </div>
+</div>
+
+<!-- PELAAJADATA -->
+<div class="pane" id="pane-players">
+  <div class="card" style="margin-bottom:10px">
+    <div class="ctitle">FBref CSV-tuonti — pelaajatason data
+      <span style="font-size:9px;color:var(--mu);font-weight:400;font-family:var(--mono)">
+        fbref.com/en/comps/43/stats/Veikkausliiga-Stats → Standard Stats → Share & Export → Get table as CSV
+      </span>
+    </div>
+    <div style="font-size:10px;font-family:var(--mono);color:var(--mu);background:var(--s2);border:1px solid var(--bdr);border-radius:5px;padding:9px 11px;margin-bottom:10px;line-height:1.9">
+      <strong style="color:var(--tx)">Ohje:</strong> Mene FBref → Veikkausliiga Stats → Standard Stats -taulukko →
+      klikkaa "Share &amp; Export" → "Get table as CSV" → kopioi kaikki → liitä alle → paina Tuo.<br>
+      Malli poimii automaattisesti: nimi, joukkue, minuutit, maalit/90, syötöt/90.<br>
+      <strong style="color:var(--gd)">TM-arvot</strong> syötetään erikseen alla — ne eivät löydy FBrefistä.
+    </div>
+    <textarea id="fbrefCsv" placeholder="Liitä FBref CSV-data tähän..." 
+      style="width:100%;height:120px;background:var(--s2);border:1px solid var(--bdr);border-radius:5px;color:var(--tx);font-family:var(--mono);font-size:10px;padding:8px;resize:vertical;outline:none"></textarea>
+    <div style="display:flex;gap:8px;margin-top:8px;align-items:center;flex-wrap:wrap">
+      <button class="btn btn-g" onclick="importFbrefCsv()">Tuo CSV-data</button>
+      <button class="btn" onclick="clearPlayerData()">Tyhjennä pelaajadata</button>
+      <span style="font-size:9px;font-family:var(--mono);color:var(--mu)" id="importMsg"></span>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="ctitle">Pelaajadata — nykyinen tila</div>
+    <div id="playerDataTable"></div>
+  </div>
+</div>
+
+<!-- BET MODAL -->
+<div class="modal-bg" id="betModal">
+  <div class="modal">
+    <div class="modal-title" id="modalTitle">Kirjaa veto</div>
+    <div class="form-grid">
+      <div class="fgrp"><label>Markkinatyyppi</label>
+        <select id="mktType" onchange="updateModalOdds()">
+          <option value="H">1 — Koti</option><option value="D">X — Tasapeli</option><option value="A">2 — Vieras</option>
+          <option value="O25">Over 2.5</option><option value="O35">Over 3.5</option><option value="U25">Under 2.5</option>
+          <option value="BTTS">BTTS Kyllä</option><option value="AHH">AH Koti</option><option value="AHA">AH Vieras</option>
+        </select>
+      </div>
+      <div class="fgrp"><label>Kerroin (oma)</label><input type="number" id="mOdds" step="0.01" placeholder="1.85"></div>
+      <div class="fgrp"><label>Avaava kerroin</label><input type="number" id="mOpening" step="0.01" placeholder="2.10" title="Kerroin kun linja avautui — sharp-vertailua varten"></div>
+      <div class="fgrp"><label>Panostus (€)</label><input type="number" id="mStake" step="1" placeholder="20"></div>
+      <div class="fgrp"><label>AH-linja (jos AH)</label><input type="number" id="mLine" step="0.25" placeholder="-0.5"></div>
+      <div class="fgrp"><label>Mallin tod. (%)</label><input type="number" id="mModelP" step="0.1" placeholder="55.0"></div>
+      <div class="fgrp"><label>Sulkemiskerroin</label><input type="number" id="mClosing" step="0.01" placeholder="1.82"></div>
+    </div>
+    <div class="fgrp" style="margin-bottom:10px"><label>Muistiinpano</label><input type="text" id="mNote" placeholder="vapaa teksti..."></div>
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-g" onclick="saveBet()">Tallenna veto</button>
+      <button class="btn" onclick="closeBetModal()">Peruuta</button>
+    </div>
+    <div style="font-size:10px;font-family:var(--mono);margin-top:7px;color:var(--gr)" id="modalMsg"></div>
+  </div>
+</div>
+
+<!-- SARJATAULUKKO -->
+<div class="pane" id="pane-table">
+  <div class="krow k4" id="tableKpi"></div>
+  <div class="g2" style="margin-bottom:10px">
+    <div class="card" style="margin:0">
+      <div class="ctitle">Sarjataulukko VL2026 <span style="font-size:9px;color:var(--mu);font-weight:400;font-family:var(--mono)">päivittyy automaattisesti tuloksista</span></div>
+      <div id="tableMain"></div>
+    </div>
+    <div>
+      <div class="card" style="margin:0 0 9px">
+        <div class="ctitle">Maalit yhteensä</div>
+        <div id="tableGoals"></div>
+      </div>
+      <div class="card" style="margin:0">
+        <div class="ctitle">Viimeisimmät tulokset</div>
+        <div id="tableRecent"></div>
+      </div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="ctitle">Muoto — viimeiset 5 ottelua</div>
+    <div id="tableForm"></div>
+  </div>
+</div>
+
+<script>
+// ═══════════════ STORAGE ═══════════════
+var SK = 'vl2026_v4';
+var saveTimer = null;
+
+var SUPA_URL = 'https://gipkbchxhhndmrutorxq.supabase.co';
+var SUPA_KEY = 'sb_publishable_zO5FMHnoakwIx0KoIV0MEQ_6SsX6_sZ';
+var SUPA_ROW_ID = 1;
+
+function getStateObj() {
+  return {
+    N: N, W: W, LU: LU, LU_RATIO: LU_RATIO, XG: XG, BAYES: BAYES, PLAYER_DATA: PLAYER_DATA,
+    benchRatio: benchRatio, decayLambda: decayLambda, nudgeStep: nudgeStep,
+    matches: matches, bets: bets, xgLog: xgLog,
+    savedAt: new Date().toISOString()
+  };
+}
+
+function saveAll() {
+  clearTimeout(saveTimer);
+  showSaving();
+  saveTimer = setTimeout(function() {
+    var state = JSON.stringify(getStateObj());
+    // Tallenna localStorage (varmuuskopio)
+    try { localStorage.setItem(SK, state); } catch(e) {}
+    // Tallenna Supabase (pilvi)
+    fetch(SUPA_URL + '/rest/v1/vl2026_state', {
+      method: 'POST',
+      headers: {
+        'apikey': SUPA_KEY,
+        'Authorization': 'Bearer ' + SUPA_KEY,
+        'Content-Type': 'application/json',
+        'Prefer': 'resolution=merge-duplicates'
+      },
+      body: JSON.stringify({id: SUPA_ROW_ID, data: state})
+    }).then(function(r) {
+      if(r.ok) { showSaved(); }
+      else { r.text().then(function(t){ console.error('Supabase save error:', t); showSaved(true); }); }
+    }).catch(function(e) { console.error('Supabase error:', e); showSaved(true); });
+  }, 800);
+}
+
+function loadAll() {
+  // Yritä ensin Supabasesta, fallback localStorageen
+  fetch(SUPA_URL + '/rest/v1/vl2026_state?id=eq.' + SUPA_ROW_ID + '&select=data', {
+    headers: {
+      'apikey': SUPA_KEY,
+      'Authorization': 'Bearer ' + SUPA_KEY
+    }
+  }).then(function(r){ return r.json(); })
+  .then(function(rows){
+    if(rows && rows.length > 0 && rows[0].data) {
+      applyState(JSON.parse(rows[0].data));
+      showMsg('Ladattu pilvestä', false);
+    } else {
+      loadFromLocal();
+    }
+  }).catch(function(){ loadFromLocal(); });
+}
+
+function loadFromLocal() {
+  try {
+    var r = localStorage.getItem(SK);
+    if (!r) return;
+    var s = JSON.parse(r);
+    applyState(s);
+  } catch(e) {}
+}
+
+function applyState(s) {
+  try {
+    if (s.N) Object.assign(N, s.N);
+    if (s.W) Object.assign(W, s.W);
+    if (s.LU) Object.assign(LU, s.LU);
+    if (s.LU_RATIO) Object.assign(LU_RATIO, s.LU_RATIO);
+    // Sanitointi: jos tallennettu LU/LU_RATIO ei tasmaa nykyiseen TEAMS-dataan
+    TEAMS.forEach(function(t){
+      var validNames = t.starters.map(function(s){return s.name;}).concat(t.bench.map(function(b){return b.name;}));
+      if (!LU[t.id]) LU[t.id] = t.starters.map(function(s){return s.name;});
+      if (!LU_RATIO[t.id]) LU_RATIO[t.id] = t.starters.map(function(){return benchRatio;});
+      t.starters.forEach(function(s, i){
+        if (validNames.indexOf(LU[t.id][i]) < 0) LU[t.id][i] = s.name;
+        if (LU_RATIO[t.id][i] == null) LU_RATIO[t.id][i] = benchRatio;
+      });
+    });
+    if (s.BAYES) Object.assign(BAYES, s.BAYES);
+    if (s.PLAYER_DATA) Object.assign(PLAYER_DATA, s.PLAYER_DATA);
+    if (s.XG) TN.forEach(function(t){ if(s.XG[t]) Object.assign(XG[t], s.XG[t]); });
+    if (s.benchRatio != null) { benchRatio = s.benchRatio; document.getElementById('benchRatio').value = Math.round(benchRatio*100); document.getElementById('brLabel').textContent = Math.round(benchRatio*100)+'%'; document.getElementById('brVal').textContent = Math.round(benchRatio*100)+'%'; }
+    if (s.decayLambda != null) { decayLambda = s.decayLambda; document.getElementById('decaySlider').value = Math.round(decayLambda*1000); }
+    if (s.nudgeStep != null) { nudgeStep = s.nudgeStep; [1,3,5,8].forEach(function(v){ var el=document.getElementById('ns-'+v); if(el)el.classList.toggle('on',v===nudgeStep); }); }
+    if (s.matches) matches = s.matches;
+    if (s.bets) bets = s.bets;
+    if (s.xgLog) xgLog = s.xgLog;
+    var saved = s.savedAt ? new Date(s.savedAt).toLocaleString('fi-FI',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}) : '';
+    showMsg('Ladattu: '+saved, false);
+  } catch(e) {}
+}
+
+function showSaving(){ var b=document.getElementById('savebar'); b.className='savebar saving'; document.getElementById('savemsg').textContent='Tallennetaan...'; }
+function showSaved(err){ var b=document.getElementById('savebar'); b.className='savebar saved'; document.getElementById('savemsg').textContent=err?'Virhe tallennuksessa':'Tallennettu '+new Date().toLocaleTimeString('fi-FI',{hour:'2-digit',minute:'2-digit'}); setTimeout(function(){b.className='savebar hide';},2500); }
+function showMsg(msg, err){ var b=document.getElementById('savebar'); b.className='savebar '+(err?'saving':'saved'); document.getElementById('savemsg').textContent=msg; setTimeout(function(){b.className='savebar hide';},3000); }
+
+// ═══════════════ TEAMS DATA ═══════════════
+var TEAMS = [
+{id:"HJK",name:"HJK",sys:"4-2-3-1",starters:[{pos:"GK",name:"Marković"},{pos:"DEF",name:"Simojoki"},{pos:"DEF",name:"Cissokho"},{pos:"DEF",name:"Tikkanen"},{pos:"DEF",name:"Ylitolva"},{pos:"MID",name:"Mentu"},{pos:"MID",name:"Lingman"},{pos:"MID",name:"Cicale"},{pos:"MID",name:"Ring"},{pos:"MID",name:"Möller"},{pos:"ATT",name:"Borchers"}],bench:[{pos:"GK",name:"Öst"},{pos:"GK",name:"Henriksson"},{pos:"DEF",name:"Bogicevic"},{pos:"DEF",name:"O'Shaughnessy"},{pos:"DEF",name:"Lyons-Foster"},{pos:"DEF",name:"Montano"},{pos:"DEF",name:"Leveälahti"},{pos:"MID",name:"Kallinen"},{pos:"MID",name:"Kirilov"},{pos:"MID",name:"Lappalainen"},{pos:"MID",name:"Hudd"},{pos:"MID",name:"Nylund"},{pos:"ATT",name:"Pukki"},{pos:"ATT",name:"Mero"},{pos:"ATT",name:"Ezeh"}]},
+{id:"Ilves",name:"Ilves",sys:"4-2-3-1",starters:[{pos:"GK",name:"Krkalic"},{pos:"DEF",name:"Rale"},{pos:"DEF",name:"Kumpu"},{pos:"DEF",name:"Väisänen"},{pos:"DEF",name:"Pettersson"},{pos:"MID",name:"Veteli"},{pos:"MID",name:"Popovitch"},{pos:"MID",name:"Raymond"},{pos:"MID",name:"Kanga"},{pos:"MID",name:"Stjopin"},{pos:"ATT",name:"Riski"}],bench:[{pos:"GK",name:"Virtanen"},{pos:"GK",name:"Baranov"},{pos:"DEF",name:"Miettunen"},{pos:"DEF",name:"Hytönen"},{pos:"DEF",name:"Paavola"},{pos:"DEF",name:"Suvanne"},{pos:"MID",name:"Multala"},{pos:"MID",name:"Tiitinen"},{pos:"MID",name:"Wallius"},{pos:"MID",name:"Kilo"},{pos:"MID",name:"Ala-Myllyämäki"},{pos:"ATT",name:"Raap"},{pos:"ATT",name:"Bamba"}]},
+{id:"KuPS",name:"KuPS",sys:"4-2-3-1",starters:[{pos:"GK",name:"Kreidl"},{pos:"DEF",name:"Antwi"},{pos:"DEF",name:"Nuhu Adams"},{pos:"DEF",name:"Hämäläinen"},{pos:"DEF",name:"Heiskanen"},{pos:"MID",name:"Kujasalo"},{pos:"MID",name:"Gasc"},{pos:"MID",name:"Kabuye"},{pos:"MID",name:"Pennanen"},{pos:"MID",name:"Ruoppi"},{pos:"ATT",name:"Moreno"}],bench:[{pos:"GK",name:"Voutilainen"},{pos:"GK",name:"Riihimäki"},{pos:"DEF",name:"Magassa"},{pos:"DEF",name:"Ward"},{pos:"DEF",name:"Armah"},{pos:"MID",name:"Toivonen A"},{pos:"MID",name:"Luyeye-Lutumba"},{pos:"MID",name:"Lötjönen"},{pos:"MID",name:"Heinonen"},{pos:"ATT",name:"Engvall"},{pos:"ATT",name:"Puukko"}]},
+{id:"FCInter",name:"FC Inter",sys:"4-3-3",starters:[{pos:"GK",name:"Huuhtanen"},{pos:"DEF",name:"Niska"},{pos:"DEF",name:"Kangasniemi"},{pos:"DEF",name:"Kuittinen"},{pos:"DEF",name:"Saarinen"},{pos:"MID",name:"Laine JP"},{pos:"MID",name:"Ahiabu"},{pos:"MID",name:"Ampofo"},{pos:"ATT",name:"Salomaa"},{pos:"ATT",name:"Botue"},{pos:"ATT",name:"Essomba"}],bench:[{pos:"GK",name:"Vuorjoki"},{pos:"GK",name:"Hilden"},{pos:"DEF",name:"Hämäläinen J"},{pos:"DEF",name:"Granlund"},{pos:"DEF",name:"Conteh"},{pos:"MID",name:"Ulundu"},{pos:"MID",name:"Järvinen I"},{pos:"MID",name:"Yli-Kokko"},{pos:"ATT",name:"Tuominen"},{pos:"ATT",name:"Huovila"}]},
+{id:"ACOulu",name:"AC Oulu",sys:"4-2-3-1",starters:[{pos:"GK",name:"Santos"},{pos:"DEF",name:"Kaukua"},{pos:"DEF",name:"Pirinen"},{pos:"DEF",name:"Pitkänen"},{pos:"DEF",name:"Kemppainen"},{pos:"MID",name:"Tiihonen"},{pos:"MID",name:"J.Paananen"},{pos:"MID",name:"Kallio"},{pos:"MID",name:"Jokelainen"},{pos:"MID",name:"Ghezali"},{pos:"ATT",name:"Karjalainen"}],bench:[{pos:"GK",name:"Ala-Iso"},{pos:"GK",name:"Schulz"},{pos:"DEF",name:"Silander"},{pos:"DEF",name:"Sipola"},{pos:"DEF",name:"Cassama"},{pos:"DEF",name:"Ilola"},{pos:"MID",name:"Ojala"},{pos:"MID",name:"Mendolin"},{pos:"MID",name:"Omotayo"},{pos:"ATT",name:"Jatta"},{pos:"ATT",name:"Körkkö"}]},
+{id:"SJK",name:"SJK",sys:"4-2-3-1",starters:[{pos:"GK",name:"Paunio"},{pos:"DEF",name:"Mömmö"},{pos:"DEF",name:"Chukwudi"},{pos:"DEF",name:"Pires"},{pos:"DEF",name:"Yussif"},{pos:"MID",name:"Arsalo"},{pos:"MID",name:"Boström"},{pos:"MID",name:"Mastokangas"},{pos:"MID",name:"K.Paananen"},{pos:"MID",name:"Djaló (Mani)"},{pos:"ATT",name:"Streng"}],bench:[{pos:"GK",name:"Viitala"},{pos:"GK",name:"James"},{pos:"DEF",name:"Väistö"},{pos:"DEF",name:"Moisio"},{pos:"DEF",name:"Björkskog"},{pos:"MID",name:"Wilson"},{pos:"MID",name:"Machaal"},{pos:"ATT",name:"Tessilimi"},{pos:"ATT",name:"Rangel"},{pos:"ATT",name:"Vargas"},{pos:"ATT",name:"Oksanen"}]},
+{id:"Gnistan",name:"IF Gnistan",sys:"4-2-3-1",starters:[{pos:"GK",name:"Craninx"},{pos:"DEF",name:"Arko-Mensah"},{pos:"DEF",name:"Gnanou"},{pos:"DEF",name:"Ojala J"},{pos:"DEF",name:"Bjurstrøm"},{pos:"MID",name:"Jouhi"},{pos:"MID",name:"Bashkirov"},{pos:"MID",name:"Latonen"},{pos:"MID",name:"Eremenko S"},{pos:"MID",name:"Ylätupa"},{pos:"ATT",name:"Akinyemi"}],bench:[{pos:"GK",name:"Lyberopoulos"},{pos:"DEF",name:"Obileye"},{pos:"DEF",name:"Hänninen"},{pos:"MID",name:"Hannula"},{pos:"MID",name:"Danny"},{pos:"MID",name:"Eremenko R"},{pos:"ATT",name:"Europaeus"}]},
+{id:"VPS",name:"VPS",sys:"3-4-1-2",starters:[{pos:"GK",name:"Jalloh"},{pos:"DEF",name:"Rönnberg"},{pos:"DEF",name:"Haukioja"},{pos:"DEF",name:"Okereke"},{pos:"MID",name:"Turfkruier"},{pos:"MID",name:"Räisänen"},{pos:"MID",name:"Lima"},{pos:"MID",name:"Daoussi"},{pos:"MID",name:"Lindholm"},{pos:"ATT",name:"Ali"},{pos:"ATT",name:"Van Duivenbooden"}],bench:[{pos:"GK",name:"Vahtera"},{pos:"DEF",name:"Mané"},{pos:"DEF",name:"Smyth"},{pos:"MID",name:"Benissan"},{pos:"MID",name:"Muzinga"},{pos:"ATT",name:"Wilson W"},{pos:"ATT",name:"Ogunniyi"}]},
+{id:"FCLahti",name:"FC Lahti",sys:"4-3-3",starters:[{pos:"GK",name:"Maukonen"},{pos:"DEF",name:"Sans"},{pos:"DEF",name:"Vehkonen"},{pos:"DEF",name:"Dantas"},{pos:"DEF",name:"Lehtonen J"},{pos:"MID",name:"Andersson"},{pos:"MID",name:"Kabashi"},{pos:"MID",name:"Heikkinen"},{pos:"ATT",name:"Ferreira"},{pos:"ATT",name:"Neemias"},{pos:"ATT",name:"Sarr"}],bench:[{pos:"GK",name:"Vainionpää"},{pos:"DEF",name:"Hakala"},{pos:"DEF",name:"Lindholm A"},{pos:"MID",name:"Ojanen"},{pos:"MID",name:"Cassubie"},{pos:"MID",name:"Yapi"},{pos:"ATT",name:"Müller"},{pos:"ATT",name:"Belabid"}]},
+{id:"FFJaro",name:"FF Jaro",sys:"4-2-3-1",starters:[{pos:"GK",name:"Vits"},{pos:"DEF",name:"Østigård Ness"},{pos:"DEF",name:"Gunnarsson"},{pos:"DEF",name:"Ogungbaro"},{pos:"DEF",name:"Bjönbäck"},{pos:"MID",name:"Skau"},{pos:"MID",name:"Kass Kawo"},{pos:"MID",name:"Weckström"},{pos:"MID",name:"Pedersen"},{pos:"MID",name:"Sjögrell"},{pos:"ATT",name:"Vikström R"}],bench:[{pos:"GK",name:"Zetterström"},{pos:"DEF",name:"Vidjeskog"},{pos:"DEF",name:"Myrevik"},{pos:"MID",name:"Vuorinen V"},{pos:"MID",name:"Holmäng"},{pos:"MID",name:"Mendy"},{pos:"ATT",name:"Söderström"},{pos:"ATT",name:"Nyman L"}]},
+{id:"IFKMariehamn",name:"IFK Mariehamn",sys:"4-3-1-2",starters:[{pos:"GK",name:"Riikonen"},{pos:"DEF",name:"Soiniemi"},{pos:"DEF",name:"Amankwah"},{pos:"DEF",name:"Lindgren"},{pos:"DEF",name:"Nissinen"},{pos:"MID",name:"Van der Heyden"},{pos:"MID",name:"Dosis"},{pos:"MID",name:"Huttunen"},{pos:"MID",name:"Dahlström S"},{pos:"ATT",name:"Pearce"},{pos:"ATT",name:"Larsson"}],bench:[{pos:"GK",name:"Lund"},{pos:"DEF",name:"Koivisto"},{pos:"DEF",name:"Andersson L"},{pos:"MID",name:"Adedoyin"},{pos:"MID",name:"Patut"},{pos:"ATT",name:"Nunez"},{pos:"ATT",name:"Jansson"}]},
+{id:"TPS",name:"TPS",sys:"4-2-3-1",starters:[{pos:"GK",name:"Henriksson"},{pos:"DEF",name:"Talo"},{pos:"DEF",name:"Hradecky"},{pos:"DEF",name:"Azongnitode"},{pos:"DEF",name:"Karkulowski"},{pos:"MID",name:"Juvanteny"},{pos:"MID",name:"Ikonen"},{pos:"MID",name:"Vauhkonen"},{pos:"MID",name:"Zaal"},{pos:"MID",name:"Könkkölä"},{pos:"ATT",name:"Ivanovic"}],bench:[{pos:"GK",name:"Sairinen"},{pos:"DEF",name:"Häggström O"},{pos:"DEF",name:"Muzaci"},{pos:"MID",name:"Coulibaly"},{pos:"MID",name:"Tsirigotis"},{pos:"ATT",name:"Anini"},{pos:"ATT",name:"Turkki"}]}
+];
+var TN=TEAMS.map(function(t){return t.id;});
+var TNAME={}; TEAMS.forEach(function(t){TNAME[t.id]=t.name;});
+var TMAP={}; TEAMS.forEach(function(t){TMAP[t.id]=t;});
+
+// ═══════════════ MALLI-DATA ═══════════════
+var XG_DEFAULT={"HJK":{hgf:1.951,agf:1.895,hga:1.261,aga:1.387},"KuPS":{hgf:1.939,agf:1.511,hga:1.181,aga:1.043},"FCInter":{hgf:2.001,agf:1.408,hga:1.122,aga:1.273},"Ilves":{hgf:1.945,agf:1.731,hga:1.388,aga:1.179},"SJK":{hgf:1.829,agf:1.92,hga:1.359,aga:1.528},"FFJaro":{hgf:1.35,agf:1.2,hga:1.52,aga:1.68},"IFKMariehamn":{hgf:1.243,agf:0.981,hga:1.735,aga:1.956},"VPS":{hgf:1.516,agf:1.406,hga:1.317,aga:1.488},"Gnistan":{hgf:1.293,agf:1.501,hga:1.776,aga:1.701},"ACOulu":{hgf:1.274,agf:1.226,hga:1.342,aga:1.754},"FCLahti":{hgf:1.387,agf:0.759,hga:1.297,aga:1.939},"TPS":{hgf:1.32,agf:1.18,hga:1.52,aga:1.72}};
+var FINISHING_CORR={"HJK":{hgf:0.003,agf:0.058},"KuPS":{hgf:0.035,agf:-0.033},"FCInter":{hgf:0.115,agf:-0.145},"Ilves":{hgf:0.07,agf:-0.07},"SJK":{hgf:-0.045,agf:-0.125},"FFJaro":{hgf:0.0,agf:0.0},"IFKMariehamn":{hgf:-0.15,agf:-0.115},"VPS":{hgf:-0.15,agf:0.005},"Gnistan":{hgf:-0.005,agf:0.088},"ACOulu":{hgf:-0.05,agf:-0.062},"FCLahti":{hgf:-0.0,agf:-0.132},"TPS":{hgf:0.0,agf:0.0}};
+var XG=JSON.parse(JSON.stringify(XG_DEFAULT));
+var N_PRIOR=6; // Priori-paino = 6 virtuaalista ottelua
+var BAYES={}; TN.forEach(function(t){BAYES[t]={hgf_sum:0,hga_sum:0,agf_sum:0,aga_sum:0,home_n:0,away_n:0,lH_sum:0,lA_sum:0};});
+var LC={
+"HJK":{p:6,gf:10,ga:8,hp:3,hgf:6,hga:3,ap:3,agf:4,aga:5},
+"KuPS":{p:5,gf:6,ga:14,hp:3,hgf:6,hga:6,ap:2,agf:0,aga:8},
+"FCInter":{p:7,gf:14,ga:6,hp:5,hgf:8,hga:6,ap:2,agf:6,aga:0},
+"Ilves":{p:6,gf:14,ga:9,hp:3,hgf:9,hga:5,ap:3,agf:5,aga:4},
+"SJK":{p:5,gf:5,ga:14,hp:3,hgf:4,hga:8,ap:2,agf:1,aga:6},
+"FFJaro":{p:5,gf:11,ga:14,hp:2,hgf:3,hga:6,ap:3,agf:8,aga:8},
+"IFKMariehamn":{p:5,gf:8,ga:4,hp:2,hgf:5,hga:1,ap:3,agf:3,aga:3},
+"VPS":{p:5,gf:9,ga:10,hp:2,hgf:2,hga:6,ap:3,agf:7,aga:4},
+"Gnistan":{p:5,gf:5,ga:8,hp:3,hgf:2,hga:5,ap:2,agf:3,aga:3},
+"ACOulu":{p:7,gf:23,ga:8,hp:3,hgf:10,hga:1,ap:4,agf:13,aga:7},
+"FCLahti":{p:5,gf:7,ga:6,hp:2,hgf:7,hga:1,ap:3,agf:0,aga:5},
+"TPS":{p:5,gf:3,ga:14,hp:2,hgf:0,hga:5,ap:3,agf:3,aga:9}};
+var GD={"HJK":{d0:{hgf:1.979,hga:1.473,agf:2.363,aga:1.475},d8:{hgf:1.912,hga:1.337,agf:2.004,aga:1.413},d15:{hgf:1.861,hga:1.261,agf:1.955,aga:1.387}},"KuPS":{d0:{hgf:2.021,hga:1.411,agf:1.647,aga:1.042},d8:{hgf:2.015,hga:1.197,agf:1.586,aga:1.033},d15:{hgf:1.919,hga:1.181,agf:1.536,aga:1.043}},"FCInter":{d0:{hgf:2.061,hga:1.103,agf:1.821,aga:1.144},d8:{hgf:1.966,hga:1.087,agf:1.62,aga:1.229},d15:{hgf:1.931,hga:1.122,agf:1.553,aga:1.273}},"Ilves":{d0:{hgf:1.77,hga:1.387,agf:2.131,aga:1.166},d8:{hgf:1.875,hga:1.341,agf:1.851,aga:1.136},d15:{hgf:1.795,hga:1.388,agf:1.801,aga:1.179}},"SJK":{d0:{hgf:1.898,hga:1.493,agf:2.154,aga:1.618},d8:{hgf:1.908,hga:1.404,agf:1.95,aga:1.623},d15:{hgf:1.829,hga:1.359,agf:1.902,aga:1.528}},"FFJaro":{d0:{hgf:1.077,hga:1.846,agf:1.364,aga:1.182},d8:{hgf:1.211,hga:1.944,agf:1.686,aga:1.211},d15:{hgf:1.319,hga:2.013,agf:2.013,aga:1.173}},"IFKMariehamn":{d0:{hgf:1.066,hga:1.941,agf:0.928,aga:2.274},d8:{hgf:1.182,hga:1.779,agf:1.008,aga:2.07},d15:{hgf:1.203,hga:1.735,agf:1.074,aga:1.956}},"VPS":{d0:{hgf:1.496,hga:1.369,agf:1.212,aga:1.623},d8:{hgf:1.688,hga:1.358,agf:1.324,aga:1.576},d15:{hgf:1.666,hga:1.317,agf:1.321,aga:1.488}},"Gnistan":{d0:{hgf:1.249,hga:2.107,agf:1.513,aga:1.863},d8:{hgf:1.297,hga:1.781,agf:1.47,aga:1.692},d15:{hgf:1.283,hga:1.776,agf:1.461,aga:1.701}},"ACOulu":{d0:{hgf:1.375,hga:1.539,agf:1.15,aga:1.439},d8:{hgf:1.263,hga:1.307,agf:1.241,aga:1.751},d15:{hgf:1.279,hga:1.342,agf:1.271,aga:1.754}},"FCLahti":{d0:{hgf:1.391,hga:1.318,agf:0.714,aga:2.009},d8:{hgf:1.391,hga:1.318,agf:0.714,aga:2.009},d15:{hgf:1.387,hga:1.297,agf:0.892,aga:1.939}},"TPS":{d0:{hgf:1.2,hga:1.65,agf:1.0,aga:1.92},d8:{hgf:1.1,hga:1.601,agf:0.93,aga:1.87},d15:{hgf:0.98,hga:1.52,agf:0.86,aga:1.81}}};
+var HE={"HJK":1.1751,"KuPS":1.2119,"FCInter":1.2193,"Ilves":1.1336,"SJK":1.1549,"FFJaro":0.782,"IFKMariehamn":0.7598,"VPS":1.0521,"Gnistan":0.8098,"ACOulu":0.8073,"FCLahti":0.876,"TPS":1.0};
+var TM={"HJK":6750,"KuPS":4680,"Ilves":3900,"SJK":3850,"FCInter":3830,"ACOulu":2950,"Gnistan":2930,"FCLahti":2300,"IFKMariehamn":2080,"VPS":2080,"FFJaro":1430,"TPS":1350};
+var H2H={"HJK|KuPS":{c:-0.15},"HJK|FCInter":{c:0.07},"HJK|Ilves":{c:0.08},"HJK|SJK":{c:0.07},"HJK|FFJaro":{c:0.08},"HJK|IFKMariehamn":{c:0.15},"HJK|VPS":{c:0.15},"HJK|Gnistan":{c:-0.08},"HJK|ACOulu":{c:0.10},"HJK|FCLahti":{c:0.15},"HJK|TPS":{c:0.13},"KuPS|HJK":{c:0.12},"KuPS|FCInter":{c:0.15},"KuPS|Ilves":{c:0.08},"KuPS|SJK":{c:0.15},"KuPS|IFKMariehamn":{c:0.15},"KuPS|VPS":{c:0.15},"KuPS|Gnistan":{c:0.14},"KuPS|ACOulu":{c:0.15},"KuPS|FCLahti":{c:0.08},"KuPS|TPS":{c:0.12},"FCInter|HJK":{c:-0.15},"FCInter|KuPS":{c:-0.15},"FCInter|Ilves":{c:0.14},"FCInter|SJK":{c:0.07},"FCInter|IFKMariehamn":{c:0.10},"FCInter|VPS":{c:0.10},"FCInter|Gnistan":{c:0.15},"FCInter|ACOulu":{c:0.15},"FCInter|FCLahti":{c:0.08},"FCInter|TPS":{c:0.15},"Ilves|HJK":{c:-0.11},"Ilves|KuPS":{c:0.08},"Ilves|FCInter":{c:0.08},"Ilves|SJK":{c:-0.11},"Ilves|IFKMariehamn":{c:0.15},"Ilves|VPS":{c:0.10},"Ilves|Gnistan":{c:-0.08},"Ilves|ACOulu":{c:0.08},"Ilves|FCLahti":{c:0.14},"Ilves|TPS":{c:0.15},"SJK|HJK":{c:-0.15},"SJK|KuPS":{c:-0.08},"SJK|FCInter":{c:0.00},"SJK|Ilves":{c:0.15},"SJK|IFKMariehamn":{c:0.15},"SJK|VPS":{c:-0.13},"SJK|Gnistan":{c:0.14},"SJK|ACOulu":{c:0.08},"SJK|TPS":{c:0.15},"FFJaro|HJK":{c:-0.15},"FFJaro|KuPS":{c:-0.08},"FFJaro|FCInter":{c:-0.15},"FFJaro|Ilves":{c:-0.08},"FFJaro|SJK":{c:-0.15},"FFJaro|IFKMariehamn":{c:-0.15},"FFJaro|ACOulu":{c:-0.08},"FFJaro|TPS":{c:-0.15},"IFKMariehamn|HJK":{c:-0.15},"IFKMariehamn|KuPS":{c:-0.15},"IFKMariehamn|FCInter":{c:-0.15},"IFKMariehamn|SJK":{c:-0.15},"IFKMariehamn|VPS":{c:-0.15},"IFKMariehamn|ACOulu":{c:0.08},"IFKMariehamn|TPS":{c:0.15},"VPS|HJK":{c:-0.15},"VPS|KuPS":{c:-0.15},"VPS|FCInter":{c:-0.08},"VPS|Ilves":{c:-0.08},"VPS|SJK":{c:-0.13},"VPS|ACOulu":{c:0.10},"Gnistan|HJK":{c:-0.15},"Gnistan|KuPS":{c:-0.15},"Gnistan|FCInter":{c:-0.08},"Gnistan|Ilves":{c:-0.15},"Gnistan|SJK":{c:-0.15},"Gnistan|IFKMariehamn":{c:0.15},"Gnistan|ACOulu":{c:0.15},"ACOulu|HJK":{c:-0.15},"ACOulu|KuPS":{c:-0.15},"ACOulu|FCInter":{c:0.14},"ACOulu|Ilves":{c:-0.15},"ACOulu|SJK":{c:-0.15},"ACOulu|IFKMariehamn":{c:-0.08},"FCLahti|HJK":{c:-0.15},"FCLahti|KuPS":{c:-0.15},"FCLahti|FCInter":{c:-0.08},"FCLahti|Ilves":{c:-0.08},"FCLahti|SJK":{c:-0.08},"FCLahti|VPS":{c:-0.15},"FCLahti|TPS":{c:0.15},"TPS|HJK":{c:-0.15},"TPS|KuPS":{c:-0.08},"TPS|FCInter":{c:-0.08},"TPS|Ilves":{c:-0.15},"TPS|SJK":{c:-0.08},"TPS|IFKMariehamn":{c:-0.11},"TPS|VPS":{c:0.08},"TPS|FCLahti":{c:0.14}};
+var LGA_AVG=1.537, GLOBAL_HE=0.9985, RHO=-0.08, NB_PHI=1.098;
+var LC_AVG=TN.reduce(function(s,t){return s+LC[t].gf/LC[t].p;},0)/TN.length;
+var PR={balanced:{d:[65,30,5],o:{}},lc:{d:[30,65,5],o:{}},xg:{d:[80,15,5],o:{}},new:{d:[55,40,5],o:{}}};
+var POS_W={ATT:{xgf:0.85,xga:0.15},MID:{xgf:0.55,xga:0.45},DEF:{xgf:0.25,xga:0.75},GK:{xgf:0,xga:1}};
+
+// Default nudges from debugging
+var N={}; TN.forEach(function(t){N[t]=0;}); // Kaikki nudget nollattu — lisää laadullisten havaintojen mukaan
+var W={}; TN.forEach(function(t){W[t]=[65,30,5];});
+// Oletuspainotus kauden alussa: xG 65% / LC 30% / GD 5%
+// GD on VL2023-2025-historiadataa (painot: 2025×1.0, 2024×0.6, 2023×0.3)
+// LC on xG-pohjaista neutraalikentän dataa — luotettavin tuore signaali
+// Bayesian posterior päivittää xG-komponentin automaattisesti VL2026-datan kertyessä
+// Muuta joukkuekohtaisesti Painotukset-välilehdellä laadullisten havaintojen mukaan
+var LU={}; TEAMS.forEach(function(t){LU[t.id]=t.starters.map(function(s){return s.name;});});
+var LU_RATIO={}; TEAMS.forEach(function(t){LU_RATIO[t.id]=t.starters.map(function(){return benchRatio;});});
+var benchRatio=0.65, decayLambda=0.008, nudgeStep=1;
+var matches=[], bets=[], xgLog=[];
+
+// ═══════════════ MATH ═══════════════
+function lgam(x){var g=7,c=[0.99999999999980993,676.5203681218851,-1259.1392167224028,771.32342877765313,-176.61502916214059,12.507343278686905,-0.13857109526572012,9.9843695780195716e-6,1.5056327351493116e-7];if(x<0.5)return Math.log(Math.PI/Math.sin(Math.PI*x))-lgam(1-x);x-=1;var a=c[0],t2=x+g+0.5;for(var i=1;i<g+2;i++)a+=c[i]/(x+i);return 0.5*Math.log(2*Math.PI)+(x+0.5)*Math.log(t2)-t2+Math.log(a);}
+function nb(k,mu){var phi=NB_PHI;if(phi<=1.001||mu<=0)return mu<=0?(k===0?1:0):Math.exp(-mu+k*Math.log(mu)-lgam(k+1));var r=mu/(phi-1),p=r/(r+mu);return Math.max(0,Math.exp(lgam(r+k)-lgam(r)-lgam(k+1)+k*Math.log(1-p)+r*Math.log(p)));}
+function pois(k,mu){if(mu<=0)return k===0?1:0;return Math.exp(-mu+k*Math.log(mu)-lgam(k+1));}
+function pmf(k,mu){var dm=document.getElementById('distMode');return (dm&&dm.value==='nb')?nb(k,mu):pois(k,mu);}
+function dc(i,j,lH,lA){if(i===0&&j===0)return 1-lH*lA*RHO;if(i===0&&j===1)return 1+lH*RHO;if(i===1&&j===0)return 1+lA*RHO;if(i===1&&j===1)return 1-RHO;return 1;}
+function buildMat(lH,lA){var m=[];for(var i=0;i<=8;i++){var r=[];for(var j=0;j<=8;j++)r.push(pmf(i,lH)*pmf(j,lA)*dc(i,j,lH,lA));m.push(r);}return m;}
+function lerp(a,b,t){return a+(b-a)*t;}
+function getGD(id,lam){var tbl=GD[id];if(!tbl)return XG[id];var l=lam*1000;if(l<=0)return tbl.d0;if(l>=15)return tbl.d15;if(l<=8)return{hgf:lerp(tbl.d0.hgf,tbl.d8.hgf,l/8),hga:lerp(tbl.d0.hga,tbl.d8.hga,l/8),agf:lerp(tbl.d0.agf,tbl.d8.agf,l/8),aga:lerp(tbl.d0.aga,tbl.d8.aga,l/8)};var t=(l-8)/7;return{hgf:lerp(tbl.d8.hgf,tbl.d15.hgf,t),hga:lerp(tbl.d8.hga,tbl.d15.hga,t),agf:lerp(tbl.d8.agf,tbl.d15.agf,t),aga:lerp(tbl.d8.aga,tbl.d15.aga,t)};}
+
+// ═══════════════ BAYESILAINEN POSTERIOR ═══════════════
+function posterior(prior, obs_sum, n_obs) {
+  if (!n_obs || n_obs === 0) return prior;
+  return (N_PRIOR * prior + obs_sum) / (N_PRIOR + n_obs);
+}
+// Palauttaa efektiiviset xG-arvot posteriorin jälkeen
+function getEffXG(tid) {
+  var b = BAYES[tid], d = XG_DEFAULT[tid];
+  if (!b || !d) return XG_DEFAULT[tid];
+  return {
+    hgf: posterior(d.hgf, b.hgf_sum, b.home_n),
+    hga: posterior(d.hga, b.hga_sum, b.home_n),
+    agf: posterior(d.agf, b.agf_sum, b.away_n),
+    aga: posterior(d.aga, b.aga_sum, b.away_n)
+  };
+}
+function dataWeight(n_obs) {
+  return Math.round(n_obs / (N_PRIOR + n_obs) * 100);
+}
+function getLuCorr(tid){
+  var t=TMAP[tid];if(!t)return{xgf:0,xga:0,changes:[]};
+  var ch=[],xf=0,xa=0,n=t.starters.length;
+  t.starters.forEach(function(s,i){
+    var cur=LU[tid][i],isSt=(cur===s.name);
+    var manRatio=LU_RATIO[tid]&&LU_RATIO[tid][i]!=null?LU_RATIO[tid][i]:null;
+    var autoRatio=!isSt?getPlayerRatio(cur,tid):null;
+    var ratio=manRatio!==null?manRatio:(autoRatio!==null?autoRatio:benchRatio);
+    var d=isSt?0:(1-ratio);
+    var pw=POS_W[s.pos];
+    xf-=d*pw.xgf/n;xa+=d*pw.xga/n;
+    if(!isSt)ch.push({pos:s.pos,st:s.name,cur:cur,ratio:ratio,autoRatio:autoRatio});
+  });
+  return{xgf:xf,xga:xa,changes:ch};
+}
+
+// Dynamic weights based on round
+function getDynWeights(baseW, roundN) {
+  // After enough VL2026 data accumulates, shift weight from VL2025 xG toward GD (which we update)
+  // This is a suggestion the user can override
+  return baseW; // user controls weights manually
+}
+
+// ── LC-luotettavuuskerroin (globaali) ────────────────────────
+// LC2026 kilpailu on päättynyt — data on vakaa eikä kasva enää.
+// Kerroin kuvaa kilpailutason diskonttia suhteessa VL-tasoon.
+// competition_factor: 0.70 — LC-vastustajat keskimäärin heikompia kuin VL
+// sample_factor: kiinteä (data ei enää kasva) → käytetään normalisoituna
+function getLcReliability(tid) {
+  var lc = LC[tid]||{p:0};
+  // Kilpailu päättyi: sample kiinteä. Isompi otanta = luotettavampi.
+  // ACOulu/FCInter pelasi 8 peliä → rel 0.70, muut 5 peliä → rel 0.35
+  // Mutta koska data on nyt historiallisesti vakaa, käytetään koko paino
+  // sellaisenaan — käyttäjä säätää W[t][1] Painotukset-välilehdellä
+  var competitionFactor = 1.0; // LC on xG-pohjaista neutraalikentän dataa — käytetään täydellä painolla
+  var sampleFactor = Math.min(1.0, lc.p / 10);
+  return Math.round(sampleFactor * competitionFactor * 100) / 100;
+}
+
+function getLambdas(hn,an){
+  var wx=W[hn]||[55,30,15], wa=W[an]||[55,30,15];
+  var nx=N[hn]||0, na=N[an]||0;
+  // Dynaaminen HE: pienenee kauden edetessä
+  // Tutkimus: kotietu pienenee ~10-15% koko kauden aikana (Wilkens 2026)
+  // 33 kierrosta = täysi kausi → fade max 12% kauden loppuun
+  var r_cur = parseInt((document.getElementById('roundNum')||{value:'1'}).value)||1;
+  var heFade = Math.max(0.88, 1 - (r_cur / 280)); // K1: 0.996×, K17: 0.939×, K33: 0.882×
+  var he=((HE[hn]||GLOBAL_HE)/GLOBAL_HE) * heFade;
+  var h2hC=(H2H[hn+'|'+an]||{c:0}).c;
+  var luH=getLuCorr(hn), luA=getLuCorr(an);
+  var gdH=getGD(hn,decayLambda), gdA=getGD(an,decayLambda);
+  var lcH=LC[hn], lcA=LC[an];
+
+  // ── Automaattinen painotusten siirtymä ─────────────────────────
+  // Käyttäjän asettamat W[t]-painot ovat lähtökohtana.
+  // Kun VL2026-dataa kertyy (BAYES), LC-paino vähenee automaattisesti
+  // koska se on kauden alussa relevanttia mutta vanhenee nopeasti.
+  // getEffXG() hoitaa jo xG-komponentin Bayesilaisesti.
+  // Tässä skaalataan LC-paino alas datan mukaan.
+  function getAutoW(tid, isHome) {
+    var w = (tid===hn) ? wx.slice() : wa.slice();
+    // ── LC-luotettavuuskerroin ──────────────────────────────────
+    // Laskee automaattisesti kuinka paljon LC-dataan voi luottaa.
+    // Perustuu pelimäärään (sample) ja kilpailutasoon (competition).
+    // Vapautuva LC-paino siirtyy GD:lle joka on vakaampi pohja.
+    var lcRel = getLcReliability(tid);
+    var lcReduced = Math.round(w[1] * lcRel * 10) / 10;
+    var lcDiff = w[1] - lcReduced;
+    var wOut = [w[0], lcReduced, w[2] + lcDiff];
+    // Lisäksi: jos VL2026-dataa on kertynyt (Bayesian), LC-paino laskee edelleen
+    var b = BAYES[tid]||{home_n:0,away_n:0};
+    var nObs = isHome ? b.home_n : b.away_n;
+    if (nObs > 0) {
+      var vlFade = Math.max(0.1, 1 - (nObs / (N_PRIOR * 2)));
+      var lcR2 = wOut[1] * vlFade;
+      var diff2 = wOut[1] - lcR2;
+      wOut = [wOut[0], lcR2, wOut[2] + diff2];
+    }
+    return wOut;
+  }
+
+  function bGF(id,ih,w,gd,lc){
+  var x=getEffXG(id);
+  var lc_avg=lc.p>0?lc.gf/lc.p:0;
+  var lc_split=ih?(lc.hp>0?lc.hgf/lc.hp:lc_avg):(lc.ap>0?lc.agf/lc.ap:lc_avg);
+  var n=ih?(lc.hp||0):(lc.ap||0);
+  var sw=Math.min(1.0,n/4); // silytys: alle 4 peliä → sekoita kokonaiskeskiarvoon
+  var lc_gf=sw*lc_split+(1-sw)*lc_avg;
+  return(w[0]/100)*(ih?x.hgf:x.agf)+(w[1]/100)*lc_gf+(w[2]/100)*(ih?gd.hgf:gd.agf);
+}
+  function bGA(id,ih,w,gd,lc){
+  var x=getEffXG(id);
+  var lc_avg_ga=lc.p>0?lc.ga/lc.p:0;
+  var lc_split_ga=ih?(lc.hp>0?lc.hga/lc.hp:lc_avg_ga):(lc.ap>0?lc.aga/lc.ap:lc_avg_ga);
+  var n=ih?(lc.hp||0):(lc.ap||0);
+  var sw=Math.min(1.0,n/4);
+  var lc_ga=sw*lc_split_ga+(1-sw)*lc_avg_ga;
+  return(w[0]/100)*(ih?x.hga:x.aga)+(w[1]/100)*lc_ga+(w[2]/100)*(ih?gd.hga:gd.aga);
+}
+
+  var wH=getAutoW(hn,true), wA=getAutoW(an,false);
+  var gfH=bGF(hn,true,wH,gdH,lcH)*(1+nx)*(1+luH.xgf);
+  var gaH=bGA(hn,true,wH,gdH,lcH)*(1+luH.xga);
+  var gfA=bGF(an,false,wA,gdA,lcA)*(1+na)*(1+luA.xgf);
+  var gaA=bGA(an,false,wA,gdA,lcA)*(1+luA.xga);
+  var attH=gfH/LGA_AVG, defH=gaH/LGA_AVG, attA=gfA/LGA_AVG, defA=gaA/LGA_AVG;
+  var h2hF=1+h2hC;
+  var lH=Math.max(0.1,attH*defA*LGA_AVG*he*h2hF);
+  var lA=Math.max(0.1,attA*defH*LGA_AVG/h2hF);
+
+  // ── Kerroinliike-signaali ─────────────────────────────────────
+  // Jos markkina on liikkunut selvästi avauksen jälkeen, se sisältää
+  // tietoa (loukkaantumiset, kokoonpano) jota malli ei muuten näe.
+  // Lähde: 2023-24 VL-data: iso liike kotiin → 70.8% kotivoitto vs 43.4% baseline
+  var odvH=parseFloat((document.getElementById('odvH')||{value:''}).value)||0;
+  var odvA=parseFloat((document.getElementById('odvA')||{value:''}).value)||0;
+  var scvH=parseFloat((document.getElementById('scvH')||{value:''}).value)||0;
+  var scvA=parseFloat((document.getElementById('scvA')||{value:''}).value)||0;
+  var mktAdj=1.0;
+  if(odvH>0&&scvH>0&&odvA>0&&scvA>0){
+    // Muunna kertoimet todennäköisyyksiksi (ei marginaalia)
+    var rawOdvH=1/odvH, rawOdvA=1/odvA;
+    var rawScvH=1/scvH, rawScvA=1/scvA;
+    var tot0=rawOdvH+rawOdvA, tot1=rawScvH+rawScvA;
+    var p0H=rawOdvH/tot0, p1H=rawScvH/tot1;
+    var move=p1H-p0H; // positiivinen = markkina siirtynyt kotiin
+    // Painota: 4% liike = pieni efekti, 8%+ = selvä signaali
+    var mktStrength=Math.min(Math.abs(move)/0.08,1.0); // 0→1 skaalaus
+    var mktDir=(move>0)?1:-1;
+    var mktEffect=1+mktDir*mktStrength*0.12; // max ±12% lambda-muutos
+    if(move>0.04){lH*=mktEffect; lA/=mktEffect;}       // markkina → koti
+    else if(move<-0.04){lA*=(1+mktStrength*0.12); lH/=(1+mktStrength*0.12);} // markkina → vieras
+    mktAdj=mktEffect;
+  }
+
+  return{lH:lH,lA:lA,h2hC:h2hC,luH:luH,luA:luA,wH:wH,wA:wA,mktAdj:mktAdj};
+}
+
+function matchProbs(hn,an){
+  var lr=getLambdas(hn,an), lH=lr.lH, lA=lr.lA;
+  var mat=buildMat(lH,lA), pH=0,pD=0,pA=0,tot=0;
+  for(var i=0;i<=8;i++)for(var j=0;j<=8;j++){var p=mat[i][j];tot+=p;if(i>j)pH+=p;else if(i===j)pD+=p;else pA+=p;}
+  if(tot>0){pH/=tot;pD/=tot;pA/=tot;}
+  var o25=0,o35=0,u25=0,btts=0;
+  for(var i=0;i<=8;i++)for(var j=0;j<=8;j++){var pn=(mat[i][j]||0)/tot;if(i+j>2)o25+=pn;if(i+j>3)o35+=pn;if(i>0&&j>0)btts+=pn;}
+  u25=1-o25;
+  return{pH:pH,pD:pD,pA:pA,lH:lH,lA:lA,mat:mat,tot:tot,o25:o25,o35:o35,u25:u25,btts:btts,h2hC:lr.h2hC,luH:lr.luH,luA:lr.luA};
+}
+
+function pct(p){return(p*100).toFixed(1)+'%';}
+function fo(p){return p>0.001?(1/p).toFixed(2):'--';}
+
+// ═══════════════ KIERROS INFO ═══════════════
+function updateRoundInfo(){
+  var r=parseInt(document.getElementById('roundNum').value)||1;
+  var el=document.getElementById('roundInfoStrip');
+  var wel=document.getElementById('roundWeightHint');
+  var hint='';
+  if(r<=3){hint='Kierros '+r+' — VL2026-dataa vähän. LC2026 on paras tuore signaali. Syötä xG-data Päivitys-välilehdellä.';}
+  else if(r<=7){hint='Kierros '+r+' — VL2026 data kertyy. Laske LC-paino 15%:iin ja nosta GD 35%:iin kun 6+ peliä per joukkue.';}
+  else if(r<=14){hint='Kierros '+r+' — Bayesian posterior dominoi. LC-paino voi laskea 5-10%:iin. Nosta GD-paino 50%+.';}
+  else{hint='Kierros '+r+' — Vahva VL2026-data. GD-paino 65-70%. Bayesian posterior lähes täysin datan ohjaama.';}
+  el.textContent=hint; el.style.display='block';
+  if(wel){ wel.textContent=hint; wel.style.display='block'; }
+}
+
+// ═══════════════ MATCH RUN ═══════════════
+var lastMP = null;
+
+function run(){
+  var hn=document.getElementById('mH').value, an=document.getElementById('mA').value;
+  if(!hn||!an||hn===an)return;
+  var mp=matchProbs(hn,an);
+  lastMP=mp;
+  var pH=mp.pH,pD=mp.pD,pA=mp.pA,lH=mp.lH,lA=mp.lA,mat=mp.mat,tot=mp.tot||1;
+
+  // Näytä kerroinliike-signaali
+  var sigEl=document.getElementById('mktSignal');
+  if(sigEl){
+    var odvH=parseFloat((document.getElementById('odvH')||{value:''}).value)||0;
+    var scvH=parseFloat((document.getElementById('scvH')||{value:''}).value)||0;
+    var odvA=parseFloat((document.getElementById('odvA')||{value:''}).value)||0;
+    var scvA=parseFloat((document.getElementById('scvA')||{value:''}).value)||0;
+    if(odvH>0&&scvH>0&&odvA>0&&scvA>0){
+      var p0H=(1/odvH)/((1/odvH)+(1/odvA));
+      var p1H=(1/scvH)/((1/scvH)+(1/scvA));
+      var move=p1H-p0H;
+      var pct=Math.round(Math.abs(move)*100);
+      var dir=move>0?'→ KOTI':'→ VIERAS';
+      var col=Math.abs(move)>=0.08?'var(--rd)':Math.abs(move)>=0.04?'var(--gd)':'var(--mu)';
+      var str=Math.abs(move)<0.02?'(ei signaalia)':Math.abs(move)<0.04?'(heikko)':Math.abs(move)<0.08?'(selvä)':'(vahva)';
+      sigEl.style.color=col;
+      sigEl.textContent=(move!==0?(pct+'% '+dir+' '+str):'');
+    } else { sigEl.textContent=''; }
+  }
+
+  // Active strip
+  var strips=[];
+  if(mp.luH.changes.length)strips.push('<strong>'+TNAME[hn]+'</strong> xGF'+(mp.luH.xgf*100).toFixed(1)+'% xGA+'+(mp.luH.xga*100).toFixed(1)+'%');
+  if(mp.luA.changes.length)strips.push('<strong>'+TNAME[an]+'</strong> xGF'+(mp.luA.xgf*100).toFixed(1)+'% xGA+'+(mp.luA.xga*100).toFixed(1)+'%');
+  if(N[hn])strips.push('<strong>'+TNAME[hn]+'</strong> '+(N[hn]>0?'+':'')+(N[hn]*100).toFixed(0)+'%');
+  if(N[an])strips.push('<strong>'+TNAME[an]+'</strong> '+(N[an]>0?'+':'')+(N[an]*100).toFixed(0)+'%');
+  var aEl=document.getElementById('astrip');
+  if(strips.length){aEl.style.display='block';aEl.innerHTML='⚡ '+strips.join(' · ');}else aEl.style.display='none';
+
+  var wH=mp.wH||W[hn], wA=mp.wA||W[an];
+  var bH=BAYES[hn]||{home_n:0}, bA=BAYES[an]||{away_n:0};
+  function wStr(w, base, tid) {
+    var lcRel = getLcReliability ? getLcReliability(tid) : 1;
+    var lcChanged = Math.abs(w[1] - base[1]) > 0.5;
+    var eff = w.map(function(v){return Math.round(v);}).join('/');
+    var base_str = base.map(function(v){return Math.round(v);}).join('/');
+    if (lcChanged) {
+      var lcOrig = Math.round(base[1]);
+      var lcEff  = Math.round(w[1]);
+      var rel_pct = Math.round(lcRel * 100);
+      return '<span style="color:var(--gd)" title="Asetettu '+base_str+'% · LC-kerroin '+rel_pct+'% ('+LC[tid].p+'p × 0.70) → efektiivinen '+eff+'%">'+eff+'% <span style="font-size:8px;opacity:.7">LC'+lcOrig+'→'+lcEff+'</span></span>';
+    }
+    var rel_pct = Math.round(lcRel * 100);
+    var lcOrig = Math.round(base[1]);
+    var lcEff = Math.round(w[1]);
+    if (lcOrig !== lcEff) {
+      return '<span style="color:var(--mu)" title="LC-kerroin '+rel_pct+'% ('+LC[tid].p+'p × 0.70) → LC '+lcOrig+'→'+lcEff+'%">'+eff+'%</span>';
+    }
+    return eff+'%';
+  }
+  document.getElementById('mmeta').innerHTML=
+    '<span><strong>'+TNAME[hn]+'</strong> HE:'+((HE[hn]||GLOBAL_HE)/GLOBAL_HE).toFixed(3)+'× W:'+wStr(wH,W[hn],hn)+'</span>'+
+    '<span><strong>'+TNAME[an]+'</strong> W:'+wStr(wA,W[an],an)+'</span>'+
+    '<span>λ='+lH.toFixed(3)+'/'+lA.toFixed(3)+(mp.h2hC?' H2H '+(mp.h2hC>=0?'+':'')+mp.h2hC.toFixed(3):'')+'</span>'+
+    '<span style="color:var(--mu);font-size:9px">LC-kerroin: '+TNAME[hn]+' '+(Math.round(getLcReliability(hn)*100))+'% · '+TNAME[an]+' '+(Math.round(getLcReliability(an)*100))+'%</span>'+
+    (bH.home_n>0||bA.away_n>0?'<span style="color:var(--gr);font-size:9px">VL2026: '+bH.home_n+'k/'+bA.away_n+'v peliä</span>':'');
+
+  document.getElementById('probBars').innerHTML=[
+    {l:TNAME[hn]+' voittaa',p:pH,c:'#00C896'},
+    {l:'Tasapeli',p:pD,c:'#F0B429'},
+    {l:TNAME[an]+' voittaa',p:pA,c:'#FF4757'}
+  ].map(function(b){
+    return '<div class="pbar-w"><div class="pbar-l">'+b.l+'</div>'+
+      '<div class="pbar-bg"><div class="pbar-f" style="width:'+(b.p*100).toFixed(1)+'%;background:'+b.c+'1A;border-right:2px solid '+b.c+'">'+
+      '<span class="pbar-v" style="color:'+b.c+'">'+pct(b.p)+'</span></div></div>'+
+      '<div class="pbar-fair">fair: '+fo(b.p)+'</div></div>';
+  }).join('');
+
+  document.getElementById('cMeta').innerHTML=[
+    {l:'Yli 2.5',v:pct(mp.o25),s:'fair '+fo(mp.o25),c:mp.o25>0.5?'g':''},
+    {l:'Yli 3.5',v:pct(mp.o35),s:'fair '+fo(mp.o35),c:''},
+    {l:'BTTS',v:pct(mp.btts),s:'fair '+fo(mp.btts),c:mp.btts>0.5?'g':''},
+    {l:'Ali 2.5',v:pct(mp.u25),s:'fair '+fo(mp.u25),c:mp.u25>0.5?'g':''}
+  ].map(function(x){return '<div class="kpi '+(x.c||'')+'"><div class="kl">'+x.l+'</div><div class="kv '+(x.c||'')+'">'+x.v+'</div><div class="ks">'+x.s+'</div></div>';}).join('');
+
+  // Score matrix
+  var mh='<table class="sm"><thead><tr><th class="L">H↓A→</th>';
+  for(var j=0;j<=5;j++)mh+='<th>'+j+'</th>';
+  mh+='</tr></thead><tbody>';
+  var maxV=0;for(var i=0;i<=5;i++)for(var j=0;j<=5;j++){var v=(mat[i][j]||0)/tot;if(v>maxV)maxV=v;}
+  for(var i=0;i<=5;i++){mh+='<tr><td class="L" style="font-family:var(--mono);font-weight:700;color:var(--mu)">'+i+'</td>';
+    for(var j=0;j<=5;j++){var v=(mat[i][j]||0)/tot;mh+='<td class="'+(v===maxV?'hlite':'')+'" style="color:'+(i>j?'var(--gr)':i===j?'var(--mu)':'var(--rd)')+'">'+( v*100).toFixed(1)+'</td>';}mh+='</tr>';}
+  mh+='</tbody></table>';
+  document.getElementById('scoreMatrix').innerHTML=mh;
+
+  // EU Handicap
+  var hcaps=[-2,-1.5,-1,-0.5,0,0.5,1,1.5,2];
+  var eh='<table><thead><tr><th class="L">Tasoitus</th><th>'+TNAME[hn]+'</th><th>Fair</th><th>'+TNAME[an]+'</th><th>Fair</th></tr></thead><tbody>';
+  hcaps.forEach(function(hc){
+    var ph2=0,pa2=0;
+    for(var i=0;i<=8;i++)for(var j=0;j<=8;j++){var pn=(mat[i][j]||0)/tot,adj=i-j+hc;if(adj>0)ph2+=pn;else if(adj<0)pa2+=pn;}
+    eh+='<tr style="'+(hc===0?'background:rgba(0,200,150,.04)':'')+'">'+
+      '<td class="L" style="font-family:var(--mono);font-weight:700;color:'+(hc===0?'var(--gr)':'var(--tx)')+'">'+(hc>0?'+':'')+hc+'</td>'+
+      '<td style="color:var(--mu)">'+TNAME[hn]+'</td><td class="'+(ph2>pa2?'pos':'neu')+'">'+fo(ph2)+'</td>'+
+      '<td style="color:var(--mu)">'+TNAME[an]+'</td><td class="'+(pa2>ph2?'pos':'neu')+'">'+fo(pa2)+'</td></tr>';
+  });
+  eh+='</tbody></table>';
+  document.getElementById('euHcap').innerHTML=eh;
+
+  // Bet buttons
+  renderBetButtons(hn, an, mp);
+  document.getElementById('matchNote').textContent='v4.1 · localStorage · NB φ=1.098 · DC ρ=−0.08 · xG 65% / LC 30% / GD 5% · Nudget: lisää Voimasäädöt-välilehdellä';
+  runKelly();
+}
+
+// ═══════════════ BET BUTTONS ═══════════════
+function renderBetButtons(hn, an, mp){
+  var btns=[
+    {id:'H', label:'Veto: 1 ('+pct(mp.pH)+')', color:'var(--gr)'},
+    {id:'D', label:'Veto: X ('+pct(mp.pD)+')', color:'var(--gd)'},
+    {id:'A', label:'Veto: 2 ('+pct(mp.pA)+')', color:'var(--rd)'},
+    {id:'O25', label:'O2.5 ('+pct(mp.o25)+')', color:'var(--bl)'},
+    {id:'O35', label:'O3.5 ('+pct(mp.o35)+')', color:'var(--bl)'},
+    {id:'U25', label:'U2.5 ('+pct(mp.u25)+')', color:'var(--am)'},
+    {id:'BTTS', label:'BTTS ('+pct(mp.btts)+')', color:'var(--am)'},
+    {id:'AHH', label:'AH Koti', color:'var(--gr)'},
+    {id:'AHA', label:'AH Vieras', color:'var(--rd)'},
+  ];
+  document.getElementById('betBtns').innerHTML=
+    '<span style="font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--mu);display:flex;align-items:center">Kirjaa veto →</span>'+
+    btns.map(function(b){
+      return '<button class="bbt" onclick="openBetModal(\''+b.id+'\')" style="border-color:'+b.color+'22;color:'+b.color+'">'+b.label+'</button>';
+    }).join('');
+}
+
+// ═══════════════ BET MODAL ═══════════════
+var currentBetContext = null;
+
+function openBetModal(mktType){
+  currentBetContext = {
+    home: document.getElementById('mH').value,
+    away: document.getElementById('mA').value,
+    round: parseInt(document.getElementById('roundNum').value)||1,
+    mp: lastMP
+  };
+  if(mktType){ document.getElementById('mktType').value = mktType; }
+  updateModalOdds();
+  var hn=currentBetContext.home, an=currentBetContext.away;
+  document.getElementById('modalTitle').textContent='Kirjaa veto — '+TNAME[hn]+' vs '+TNAME[an];
+  document.getElementById('betModal').classList.add('show');
+  document.getElementById('modalMsg').textContent='';
+}
+
+function updateModalOdds(){
+  if(!lastMP||!currentBetContext) return;
+  var mkt=document.getElementById('mktType').value;
+  var mp=lastMP;
+  var autoOdds=mkt==='H'?fo(mp.pH):mkt==='D'?fo(mp.pD):mkt==='A'?fo(mp.pA):mkt==='O25'?fo(mp.o25):mkt==='O35'?fo(mp.o35):mkt==='U25'?fo(mp.u25):mkt==='BTTS'?fo(mp.btts):'';
+  // Pre-fill kelly odds if available
+  var kO1=document.getElementById('kO1').value, kOX=document.getElementById('kOX').value, kO2=document.getElementById('kO2').value;
+  var prefill=mkt==='H'&&kO1?kO1:mkt==='D'&&kOX?kOX:mkt==='A'&&kO2?kO2:'';
+  if(prefill) document.getElementById('mOdds').value=prefill;
+  var p=mkt==='H'?mp.pH:mkt==='D'?mp.pD:mkt==='A'?mp.pA:mkt==='O25'?mp.o25:mkt==='O35'?mp.o35:mkt==='U25'?mp.u25:mkt==='BTTS'?mp.btts:0;
+  if(p>0) document.getElementById('mModelP').value=(p*100).toFixed(1);
+}
+
+function closeBetModal(){ document.getElementById('betModal').classList.remove('show'); }
+
+function saveBet(){
+  var ctx=currentBetContext;
+  if(!ctx){closeBetModal();return;}
+  var mkt=document.getElementById('mktType').value;
+  var odds=parseFloat(document.getElementById('mOdds').value)||0;
+  var opening=parseFloat(document.getElementById('mOpening').value)||0;
+  var stake=parseFloat(document.getElementById('mStake').value)||0;
+  var modelP=parseFloat(document.getElementById('mModelP').value)/100||0;
+  var closing=parseFloat(document.getElementById('mClosing').value)||0;
+  var line=document.getElementById('mLine').value;
+  var note=document.getElementById('mNote').value;
+  if(!odds||odds<=1||!stake){document.getElementById('modalMsg').textContent='Syötä kerroin ja panostus!';return;}
+  var clv=closing>0?(odds/closing-1):null;
+  var clvVsOpen=opening>0?(odds/opening-1):null;
+  var steam=opening>0?(odds-opening):null; // negatiivinen = sharp samaa mieltä
+  var bet={
+    id:Date.now(), round:ctx.round, date:new Date().toLocaleDateString('fi-FI'),
+    home:ctx.home, away:ctx.away, homeN:TNAME[ctx.home], awayN:TNAME[ctx.away],
+    mkt:mkt, odds:odds, opening:opening||null, stake:stake, modelP:modelP,
+    closing:closing, clv:clv, clvVsOpen:clvVsOpen, steam:steam,
+    line:line||null, note:note, result:null, profit:null
+  };
+  bets.push(bet);
+  saveAll();
+  renderTrackKpi();
+  renderBetHist();
+  document.getElementById('modalMsg').textContent='✓ Veto kirjattu!';
+  setTimeout(closeBetModal, 1200);
+}
+
+// ═══════════════ KELLY ═══════════════
+function fillFairOdds(){
+  if(!lastMP) return;
+  var mp=lastMP;
+  // Aseta fair-kertoimet suoraan kenttiin
+  document.getElementById('kO1').value=fo(mp.pH);
+  document.getElementById('kOX').value=fo(mp.pD);
+  document.getElementById('kO2').value=fo(mp.pA);
+  runKelly();
+  // Näytä lyhyt flash-viesti
+  var btn=event.target;
+  var orig=btn.textContent; btn.textContent='✓ Kopioitu'; btn.style.color='var(--gr)';
+  setTimeout(function(){btn.textContent=orig;btn.style.color='var(--gd)';},1200);
+}
+function updKSideLabel(){var s=document.getElementById('kSide').value;var isOU=s==='O25'||s==='O35'||s==='U25'||s==='BTTS'||s==='AHH'||s==='AHA';document.querySelector('label[for="kO1"]')||document.getElementById('kO1').previousElementSibling;var hint=document.getElementById('kellyHint');if(!hint){hint=document.createElement('div');hint.id='kellyHint';hint.style.cssText='font-size:9px;color:var(--gd);font-family:var(--mono);margin-top:4px';document.getElementById('kRes').parentNode.insertBefore(hint,document.getElementById('kWarn'));}hint.textContent=isOU?'O/U/BTTS/AH: syötä kerroin vain kO1-kenttään':'1X2: syötä kaikki kolme kerrointa';}
+function getMaxKF(o){if(o<=2.5)return 1;if(o<=3.0)return 0.75;if(o<=3.5)return 0.50;if(o<=5.0)return 0.33;return 0.25;}
+function runKelly(){
+  var hn=document.getElementById('mH').value, an=document.getElementById('mA').value;
+  if(!hn||!an||hn===an||!lastMP)return;
+  var mp=lastMP, side=document.getElementById('kSide').value;
+  var modelP=side==='H'?mp.pH:side==='D'?mp.pD:side==='A'?mp.pA:side==='O25'?mp.o25:side==='O35'?mp.o35:side==='U25'?mp.u25:side==='BTTS'?mp.btts:0;
+  var bank=parseFloat(document.getElementById('kBank').value)||500;
+  var conf=parseFloat(document.getElementById('kConf').value)/100||0.8;
+  var o1=parseFloat(document.getElementById('kO1').value)||0, oX=parseFloat(document.getElementById('kOX').value)||0, o2=parseFloat(document.getElementById('kO2').value)||0;
+  var wEl=document.getElementById('kWarn'), rEl=document.getElementById('kRes');
+  var isOUBTTS=(side==='O25'||side==='O35'||side==='U25'||side==='BTTS'||side==='AHH'||side==='AHA');
+  if(isOUBTTS){if(!o1||o1<=1.01){rEl.innerHTML='<div style="color:var(--mu);font-size:11px;font-family:var(--mono)">Syötä kohteen kerroin kO1-kenttään.</div>';wEl.innerHTML='';return;}}
+  else if(!o1||!oX||!o2||o1<=1.01||oX<=1.01||o2<=1.01){rEl.innerHTML='<div style="color:var(--mu);font-size:11px;font-family:var(--mono)">Syötä kaikki kolme kerrointa.</div>';wEl.innerHTML='';return;}
+  var mg=isOUBTTS?1:(1/o1+1/oX+1/o2), mgP=isOUBTTS?0:(mg-1)*100;
+  if(!isOUBTTS&&(mgP<-2||mgP>25)){wEl.innerHTML='<div class="warn">Marginaali '+mgP.toFixed(1)+'%</div>';rEl.innerHTML='';return;}
+  wEl.innerHTML='';
+  var tF=isOUBTTS?o1:(side==='H'?o1*mg:side==='D'?oX*mg:o2*mg);
+  // For O/U and BTTS, user enters the market odds directly in kO1 field
+  if(side==='O25'||side==='O35'||side==='U25'||side==='BTTS'){tF=o1;}
+  var implP=1/tF, pAdj=modelP*conf+implP*(1-conf), b=tF-1, edge=pAdj*b-(1-pAdj);
+  var kR=Math.max(0,edge/b), stake=bank*kR*getMaxKF(tF)*0.5;
+  if(edge<=0){rEl.innerHTML='<div class="warn">Negatiivinen edge ('+(edge*100).toFixed(2)+'%)</div>';return;}
+  rEl.innerHTML='<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px">'+
+    [['Mallin tod.',pct(modelP),'var(--gr)'],['Korjattu',pct(pAdj),'var(--gd)'],['Edge',(edge*100).toFixed(2)+'%','var(--gr)'],['Half Kelly',stake.toFixed(2)+' €','var(--bl)']].map(function(x){
+      return '<div style="background:rgba(0,0,0,.3);border:1px solid var(--bdr);border-radius:4px;padding:6px 8px"><div style="font-size:9px;color:var(--mu);margin-bottom:2px;font-weight:700;letter-spacing:.08em;text-transform:uppercase">'+x[0]+'</div><div style="font-family:var(--mono);font-size:14px;font-weight:500;color:'+x[2]+'">'+x[1]+'</div></div>';
+    }).join('')+'</div>';
+}
+
+// ═══════════════ ASIAN ═══════════════
+function runAsian(){
+  var hn=document.getElementById('aH').value, an=document.getElementById('aA').value;
+  if(!hn||!an||hn===an)return;
+  var bk=parseFloat(document.getElementById('bkOdds').value)||1.90, fH=document.getElementById('aSide').value==='home';
+  var lr=getLambdas(hn,an), lH=lr.lH, lA=lr.lA;
+  var mat=buildMat(lH,lA);
+  var T=0;for(var i=0;i<=8;i++)for(var j=0;j<=8;j++)T+=mat[i][j];T=T||1;
+  function ahP(hc,fh){var win=0,push=0;for(var i=0;i<=8;i++)for(var j=0;j<=8;j++){var p=mat[i][j]/T,mg=fh?(i-j+hc):(j-i-hc);if(mg>0)win+=p;else if(mg===0)push+=p;}return{win:win,push:push};}
+  var lines=[-1.75,-1.5,-1.25,-1,-0.75,-0.5,-0.25,0,0.25,0.5,0.75,1,1.25,1.5,1.75];
+  document.getElementById('asianLines').innerHTML=lines.map(function(hc){
+    var isQ=(Math.abs(hc*4)%2)===1, effP;
+    if(isQ){var lo=hc<0?Math.ceil(hc*2)/2:Math.floor(hc*2)/2, hi=hc<0?Math.floor(hc*2)/2:Math.ceil(hc*2)/2;var r1=ahP(lo,fH),r2=ahP(hi,fH);effP=(r1.win+r1.push*0.5+r2.win+r2.push*0.5)/2;}
+    else{var r=ahP(hc,fH);effP=r.win+r.push*0.5;}
+    var ev=effP*bk-1, evc=ev>0.03?'var(--gr)':ev<-0.03?'var(--rd)':'var(--mu)';
+    return '<div style="display:flex;align-items:center;gap:8px;padding:5px 8px;border-bottom:1px solid var(--bdr);font-size:11px">'+
+      '<span style="min-width:80px;font-family:var(--mono);color:var(--mu)">'+(fH?TNAME[hn]:TNAME[an])+' '+(hc>0?'+':'')+hc+'</span>'+
+      '<span style="font-family:var(--mono);font-weight:500;min-width:52px">'+pct(effP)+'</span>'+
+      '<span style="font-family:var(--mono);color:var(--mu);min-width:52px">'+fo(effP)+'</span>'+
+      '<span style="font-family:var(--mono);font-weight:600;margin-left:auto;color:'+evc+'">EV '+(ev>=0?'+':'')+(ev*100).toFixed(1)+'%</span></div>';
+  }).join('');
+  var tlines=[1.5,2,2.5,3,3.5,4,4.5];
+  var th='<table><thead><tr><th class="L">Linja</th><th>Yli%</th><th>Fair</th><th>Ali%</th><th>Fair</th><th>EV yli</th></tr></thead><tbody>';
+  tlines.forEach(function(ln){var ov=0;for(var i=0;i<=8;i++)for(var j=0;j<=8;j++){if(i+j>ln)ov+=(mat[i][j]||0)/T;}var ev=ov*bk-1;th+='<tr><td class="L">'+ln+'</td><td>'+pct(ov)+'</td><td>'+fo(ov)+'</td><td>'+pct(1-ov)+'</td><td>'+fo(1-ov)+'</td><td class="'+(ev>0.03?'pos':ev<-0.03?'neg':'neu')+'">'+(ev>=0?'+':'')+(ev*100).toFixed(1)+'%</td></tr>';});
+  th+='</tbody></table>';
+  document.getElementById('asianTotals').innerHTML=th;
+}
+
+// ═══════════════ GOALS ═══════════════
+function runGoals(){
+  var hn=document.getElementById('gH').value, an=document.getElementById('gA').value;
+  if(!hn||!an||hn===an)return;
+  var lr=getLambdas(hn,an), lH=lr.lH, lA=lr.lA;
+  var mat=buildMat(lH,lA);
+  var T=0;for(var i=0;i<=8;i++)for(var j=0;j<=8;j++)T+=mat[i][j];T=T||1;
+  var btts=0,o25=0,o35=0;
+  for(var i=0;i<=8;i++)for(var j=0;j<=8;j++){var pn=(mat[i][j]||0)/T;if(i>0&&j>0)btts+=pn;if(i+j>2)o25+=pn;if(i+j>3)o35+=pn;}
+  var lH1=lH*0.43,lA1=lA*0.43,o05h=0,o15h=0;
+  for(var i=0;i<=4;i++)for(var j=0;j<=4;j++){var p=pmf(i,lH1)*pmf(j,lA1);if(i+j>0)o05h+=p;if(i+j>1)o15h+=p;}
+  document.getElementById('cGoals').innerHTML=[
+    {l:'Odotettu koti',v:lH.toFixed(3),s:TNAME[hn],c:'g'},
+    {l:'Odotettu vieras',v:lA.toFixed(3),s:TNAME[an],c:'r'},
+    {l:'Yli 2.5',v:pct(o25),s:'fair '+fo(o25),c:o25>0.5?'g':''},
+    {l:'BTTS',v:pct(btts),s:'fair '+fo(btts),c:btts>0.5?'g':''}
+  ].map(function(x){return '<div class="kpi '+(x.c||'')+'"><div class="kl">'+x.l+'</div><div class="kv '+(x.c||'')+'">'+x.v+'</div><div class="ks">'+x.s+'</div></div>';}).join('');
+  var gl='<table><thead><tr><th class="L">Linja</th><th>Yli%</th><th>Fair</th><th>Ali%</th><th>Fair</th></tr></thead><tbody>';
+  [0.5,1.5,2.5,3.5,4.5,5.5].forEach(function(ln){var ov=0;for(var i=0;i<=8;i++)for(var j=0;j<=8;j++){if(i+j>ln)ov+=(mat[i][j]||0)/T;}gl+='<tr><td class="L">'+ln+'</td><td>'+pct(ov)+'</td><td class="'+(ov>0.5?'pos':'neu')+'">'+fo(ov)+'</td><td>'+pct(1-ov)+'</td><td>'+fo(1-ov)+'</td></tr>';});
+  gl+='</tbody></table>';
+  document.getElementById('goalLines').innerHTML=gl;
+  var bt='<table><thead><tr><th class="L">Markkina</th><th>%</th><th>Fair</th></tr></thead><tbody>';
+  [['BTTS kyllä',btts],['BTTS ei',1-btts],['1H yli 0.5',o05h],['1H yli 1.5',o15h],['1H ali 0.5',1-o05h]].forEach(function(r){bt+='<tr><td class="L">'+r[0]+'</td><td>'+pct(r[1])+'</td><td class="'+(r[1]>0.5?'pos':'neu')+'">'+fo(r[1])+'</td></tr>';});
+  bt+='</tbody></table>';
+  document.getElementById('bttsTable').innerHTML=bt;
+}
+
+// ═══════════════ LINEUPS ═══════════════
+function updBR(v){
+  benchRatio=v/100;
+  document.getElementById('brLabel').textContent=v+'%';
+  document.getElementById('brVal').textContent=v+'%';
+  // Päivitä vain ne joita ei ole muutettu manuaalisesti (== vanhan benchRatio)
+  // Yksinkertaisempi: nollaa kaikki muuttumattomat takaisin uuteen benchRatio
+  TEAMS.forEach(function(t){
+    t.starters.forEach(function(s,i){
+      if(LU[t.id][i]===s.name) LU_RATIO[t.id][i]=benchRatio;
+    });
+  });
+  saveAll();run();renderLineups();
+}
+function initials(n){var p=n.split(' ');return p.length>1?p[0][0]+'.'+p[p.length-1].slice(0,4):n.slice(0,5);}
+function getPitchRows(t){var rows={GK:[],DEF:[],MID:[],ATT:[]};t.starters.forEach(function(s,i){rows[s.pos].push({pos:s.pos,name:LU[t.id][i],orig:s.name,idx:i});});if(t.sys==='3-4-1-2')return[rows.GK,rows.DEF,rows.MID.slice(0,4),rows.MID.slice(4),rows.ATT];if(t.sys==='4-3-3')return[rows.GK,rows.DEF,rows.MID,rows.ATT];return[rows.GK,rows.DEF,rows.MID.slice(0,2),rows.MID.slice(2),rows.ATT];}
+function renderTeamCard(t){
+  var lu=getLuCorr(t.id), inXI=new Set(LU[t.id]);
+  var rows=getPitchRows(t);
+  var pitchHtml=rows.map(function(row){return '<div class="prow">'+row.map(function(p){return '<div class="ppl '+p.pos+(p.name!==p.orig?' ch':'')+'"><div class="ppl-dot">'+initials(p.name)+'</div><div class="ppl-nm">'+p.name.split(' ')[0]+'</div></div>';}).join('')+'</div>';}).join('');
+  var allOpts=t.starters.map(function(s){return s.name;}).concat(t.bench.map(function(b){return b.name;}));
+  var posHtml=t.starters.map(function(s,i){
+    var cur=LU[t.id][i], changed=cur!==s.name;
+    var ratio=LU_RATIO[t.id]&&LU_RATIO[t.id][i]!=null?LU_RATIO[t.id][i]:benchRatio;
+    var pw=POS_W[s.pos], delta=1-ratio;
+    var opts=allOpts.map(function(o){return'<option value="'+o+'"'+(o===cur?' selected':'')+'>'+o+'</option>';}).join('');
+    var ratioSel='';
+    if(changed){
+      var rOpts=[1.0,0.95,0.90,0.85,0.80,0.75,0.70,0.65,0.60,0.55,0.50].map(function(v){
+        return'<option value="'+v+'"'+(Math.abs(v-ratio)<0.01?' selected':'')+'>'+Math.round(v*100)+'%</option>';
+      }).join('');
+      ratioSel='<select class="pos-sel" id="pr-'+t.id+'-'+i+'" style="width:52px;flex:none;color:var(--gd);font-size:9px;border-left:1px solid var(--bdr2);padding-left:4px">'+rOpts+'</select>';
+      var xgfChg=(-(delta*pw.xgf/11)*100).toFixed(0);
+      var xgaChg=(+(delta*pw.xga/11)*100).toFixed(1);
+      var impact='<span class="impact-lbl" title="xGF '+xgfChg+'% xGA+'+xgaChg+'%">xGF'+xgfChg+'%</span>';
+    } else { var impact=''; }
+    return'<div class="pos-row'+(changed?' ch':'')+'">'+
+      '<span class="pos-tag '+s.pos+'t">'+s.pos+'</span>'+
+      '<select class="pos-sel" id="ps-'+t.id+'-'+i+'">'+opts+'</select>'+
+      ratioSel+impact+
+    '</div>';
+  }).join('');
+  var benchHtml=t.bench.map(function(b){return'<span class="bpl '+b.pos+'" style="'+(inXI.has(b.name)?'opacity:.3':'')+'">'+b.name+'</span>';}).join('');
+  var impStr=lu.changes.length?'<div style="color:var(--rd);font-size:9px">xGF'+(lu.xgf*100).toFixed(1)+'% xGA+'+(lu.xga*100).toFixed(1)+'%</div>':'<div style="color:var(--gr);font-size:9px">✓</div>';
+
+  // ── λ-yhteenvetolaatikko ──────────────────────────────────
+  var impactBox = '';
+  if (lu.changes.length > 0) {
+    // Laske λ-muutos vertaamalla ihanteelliseen ja nykyiseen
+    // Käytämme analyysipaneelinsuuntaista laskelma
+    var hn = document.getElementById('mH') ? document.getElementById('mH').value : '';
+    var an = document.getElementById('mA') ? document.getElementById('mA').value : '';
+    var isHome = (hn === t.id), isAway = (an === t.id);
+    var lambdaInfo = '';
+    if ((isHome || isAway) && hn && an && hn !== an && lastMP) {
+      var mp = lastMP;
+      // Laske ihanteellinen (ilman lu-korjausta) — approksimoidaan
+      var xgfCorr = lu.xgf, xgaCorr = lu.xga;
+      var lH_cur = mp.lH, lA_cur = mp.lA;
+      // Approksimoi ihanteellinen lambda
+      var lH_ideal = isHome ? lH_cur / (1 + xgfCorr) : lH_cur;
+      var lA_ideal = isAway ? lA_cur / (1 + xgfCorr) : lA_cur;
+      var dLH = isHome ? lH_cur - lH_ideal : 0;
+      var dLA = isAway ? lA_cur - lA_ideal : 0;
+      var dP = 0; // λ-ideal-vertailu ei käytössä
+      lambdaInfo = '<div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:4px">'+
+        (isHome ? '<span>λ koti: <strong style="font-family:var(--mono)">'+(lH_cur).toFixed(3)+'</strong></span>' : '')+
+        (isAway ? '<span>λ vieras: <strong style="font-family:var(--mono)">'+(lA_cur).toFixed(3)+'</strong></span>' : '')+
+      '</div>';
+    }
+    impactBox = '<div style="background:var(--rdbg);border:1px solid var(--rdbdr);border-radius:4px;padding:6px 9px;margin-top:6px;font-size:10px;font-family:var(--mono)">'+
+      '<div style="color:var(--rd);font-weight:700;margin-bottom:4px">Kokoonpanomuutos ('.replace(/\(/,'(') + lu.changes.length + ' vaihto'+( lu.changes.length>1?'a':'')+')</div>'+
+      lu.changes.map(function(c){
+        var r = LU_RATIO[t.id] ? LU_RATIO[t.id][t.starters.findIndex(function(s){return s.pos===c.pos&&s.name===c.st;})] : benchRatio;
+        var delta2 = 1-( r!=null?r:benchRatio);
+        var pw2 = POS_W[c.pos];
+        var xgfChg = -(delta2*pw2.xgf/11)*100;
+        var xgaChg = (delta2*pw2.xga/11)*100;
+        return '<div style="color:var(--mu);margin-bottom:2px">'+
+          c.pos+' <span style="color:var(--tx)">'+c.st+'</span> → '+c.cur+
+          ' <span style="color:var(--gd)">'+Math.round((r||benchRatio)*100)+'%</span>'+
+          ' <span style="color:var(--rd)">xGF'+(xgfChg>=0?'+':'')+xgfChg.toFixed(1)+'%</span>'+
+          ' <span style="color:var(--bl)">xGA+'+(xgaChg).toFixed(1)+'%</span>'+
+        '</div>';
+      }).join('')+
+      '<div style="border-top:1px solid var(--rdbdr);margin-top:4px;padding-top:4px;color:var(--tx)">'+
+        'Yhteensä: xGF<span style="color:var(--rd)">'+(lu.xgf*100).toFixed(2)+'%</span> '+
+        'xGA<span style="color:var(--bl)">+'+(lu.xga*100).toFixed(2)+'%</span>'+
+        lambdaInfo+
+      '</div>'+
+    '</div>';
+  }
+
+  return '<div class="lu-card">'+
+    '<div class="lu-head"><span class="lu-name">'+t.name+'</span>'+
+    '<div><span style="color:var(--gd);font-size:10px;font-family:var(--mono)">'+t.sys+'</span>'+impStr+'</div></div>'+
+    '<div class="lu-body">'+
+    '<div class="pitch">'+pitchHtml+'</div>'+
+    '<div class="pos-rows">'+posHtml+'</div>'+
+    impactBox+
+    '<div class="bench-lbl" style="margin-top:6px">Penkki</div>'+
+    '<div class="bench-list">'+benchHtml+'</div>'+
+    '</div></div>';
+}
+function renderLineups(){
+  var f=document.getElementById('luFilter').value;
+  var teams=f==='all'?TEAMS:TEAMS.filter(function(t){return t.id===f;});
+  var cols=teams.length===1?1:teams.length<=4?2:3;
+  var cards=teams.map(function(t){try{return renderTeamCard(t);}catch(e){return '<div style="padding:8px;color:var(--rd);font-size:10px;border:1px solid var(--rdbdr);border-radius:5px">'+t.name+' — virhe: '+e.message+'</div>';}});document.getElementById('luGrid').innerHTML='<div style="display:grid;grid-template-columns:repeat('+cols+',1fr);gap:9px">'+cards.join('')+'</div>';
+  teams.forEach(function(t){
+    t.starters.forEach(function(s,i){
+      var el=document.getElementById('ps-'+t.id+'-'+i);
+      if(el) el.onchange=function(){
+        LU[t.id][i]=this.value;
+        // Nollaa ratio takaisin benchRatio:ksi jos palautetaan starter
+        if(this.value===s.name) LU_RATIO[t.id][i]=benchRatio;
+        renderLineups();run();saveAll();
+      };
+      var rel=document.getElementById('pr-'+t.id+'-'+i);
+      if(rel) rel.onchange=function(){
+        LU_RATIO[t.id][i]=parseFloat(this.value);
+        renderLineups();run();saveAll();
+      };
+    });
+  });
+}
+function resetLU(){
+  TEAMS.forEach(function(t){
+    LU[t.id]=t.starters.map(function(s){return s.name;});
+    LU_RATIO[t.id]=t.starters.map(function(){return benchRatio;});
+  });
+  renderLineups();run();saveAll();
+}
+
+// ═══════════════ WEIGHTS ═══════════════
+function updDecay(v){decayLambda=v/1000;document.getElementById('decayVal').textContent=decayLambda.toFixed(3);var oldest=Math.exp(-decayLambda*218);document.getElementById('decayNote').textContent='λ='+decayLambda.toFixed(3)+': keväin paino='+oldest.toFixed(3)+', syksy=1.000.';renderDecayBars();saveAll();run();}
+function renderDecayBars(){var months=['Apr','May','Jun','Jul','Aug','Sep','Oct','Nov'],dfe=[218,187,157,126,95,65,34,0];var weights=dfe.map(function(d){return Math.exp(-decayLambda*d);}),maxW=Math.max.apply(null,weights);document.getElementById('decayBars').innerHTML=weights.map(function(w){var h=Math.max(3,(w/maxW)*40);return'<div style="flex:1;height:'+h.toFixed(0)+'px;background:var(--gr);border-radius:3px 3px 0 0;opacity:'+(0.2+w*0.8).toFixed(2)+'"></div>';}).join('');document.getElementById('decayMonths').innerHTML=months.map(function(m){return'<div style="flex:1;text-align:center;font-size:8px;color:var(--dim);font-family:var(--mono)">'+m+'</div>';}).join('');}
+function setPreset(p){var pr=PR[p];TN.forEach(function(t){W[t]=pr.o[t]?pr.o[t].slice():[pr.d[0],pr.d[1],pr.d[2]];});document.querySelectorAll('.pbtn[id^="pr-"]').forEach(function(b){b.classList.toggle('on',b.id==='pr-'+p);});renderWPanels();saveAll();run();}
+function renderWPanels(){document.getElementById('wPanels').innerHTML=TN.map(function(t){var w=W[t],total=w[0]+w[1]+w[2],ok=Math.abs(total-100)<1,heN=((HE[t]||GLOBAL_HE)/GLOBAL_HE).toFixed(3);return'<div class="wp"><div class="wp-head"><span class="wp-name">'+TNAME[t]+'</span><span style="font-size:10px;font-family:var(--mono)"><span style="color:var(--gd)">€'+(TM[t]?(TM[t]/1000).toFixed(2):'?')+'M</span> <span style="color:var(--mu)">HE:'+heN+'×</span></span></div>'+[['VL2025 xG (Bayesian)','var(--gr)'],['LC2026 (päättynyt)','var(--dim)'],['VL2025/2026 GD','var(--bl)']].map(function(sl,i){return'<div class="sl-row"><span class="sl-l">'+sl[0]+'</span><input type="range" min="0" max="100" step="5" value="'+w[i]+'" oninput="upW(\''+t+'\','+i+',this.value)" style="accent-color:'+sl[1]+'"><span class="sl-v" id="sv-'+t+'-'+i+'" style="color:'+sl[1]+'">'+w[i]+'%</span></div>';}).join('')+'<div class="wtot '+(ok?'ok':'bad')+'" id="wt-'+t+'">∑ '+total+'% '+(ok?'✓':'← pitää olla 100%')+'</div></div>';}).join('');}
+function upW(t,i,v){W[t][i]=parseInt(v);var sp=document.getElementById('sv-'+t+'-'+i);if(sp)sp.textContent=v+'%';var tot=W[t].reduce(function(a,b){return a+b;},0);var el=document.getElementById('wt-'+t);if(el){el.textContent='∑ '+tot+'% '+(Math.abs(tot-100)<1?'✓':'← pitää olla 100%');el.className='wtot '+(Math.abs(tot-100)<1?'ok':'bad');}document.querySelectorAll('.pbtn[id^="pr-"]').forEach(function(b){b.classList.remove('on');});saveAll();run();}
+
+// ═══════════════ NUDGES ═══════════════
+function setStep(s){nudgeStep=s;[1,3,5,8].forEach(function(v){var el=document.getElementById('ns-'+v);if(el)el.classList.toggle('on',v===s);});saveAll();renderNudges();}
+function renderNudges(){
+  document.getElementById('nudgeGrid').innerHTML=TN.map(function(t){
+    var n=N[t],cls=n>0?'up':n<0?'dn':'';
+    var bW=Math.min(50,Math.abs(n)/0.30*50),bL=n>=0?50:50-bW;
+    var bc=n>0?'var(--gr)':n<0?'var(--rd)':'var(--bdr2)';
+    var step=nudgeStep/100;
+    return'<div class="nc"><div class="nc-name">'+TNAME[t]+'</div>'+
+      '<div class="nc-ctrl">'+
+        '<button class="nb" onclick="nudge(\''+t+'\',' +-step+')">&#8722;'+nudgeStep+'%</button>'+
+        '<div class="nv '+cls+'">'+(n===0?'0%':n>0?'+'+(n*100).toFixed(0)+'%':(n*100).toFixed(0)+'%')+'</div>'+
+        '<button class="nb" onclick="nudge(\''+t+'\','+step+')">+'+nudgeStep+'%</button>'+
+      '</div>'+
+      '<div class="nbar"><div style="position:absolute;left:50%;top:0;bottom:0;width:1px;background:var(--bdr2)"></div>'+
+        '<div class="nfill" style="width:'+bW+'%;left:'+bL+'%;background:'+bc+'"></div></div>'+
+      '<div class="nhint">'+(n===0?'mallin oma':n>0?'+'+(n*100).toFixed(0)+'% vahvempi':(n*100).toFixed(0)+'% heikompi')+'</div>'+
+    '</div>';
+  }).join('');
+  var act=TN.filter(function(t){return N[t]!==0;});
+  document.getElementById('nudgeSumm').textContent=act.length?
+    'Aktiiviset: '+act.map(function(t){return TNAME[t]+' ('+(N[t]>0?'+':'')+(N[t]*100).toFixed(0)+'%)';}).join(' \u00b7 '):
+    'Kaikki nollassa.';
+  renderNudgeSuggestions();
+}
+
+function renderNudgeSuggestions(){
+  var box=document.getElementById('nudgeSuggestBox');
+  if(!box){
+    box=document.createElement('div');
+    box.id='nudgeSuggestBox';
+    box.style.cssText='margin-top:10px';
+    var summ=document.getElementById('nudgeSumm');
+    if(summ&&summ.parentNode) summ.parentNode.insertBefore(box,summ.nextSibling);
+  }
+  if(!box) return;
+  var teamData={};
+  TN.forEach(function(t){teamData[t]={hLSum:0,hXGSum:0,hN:0};});
+  matches.forEach(function(m){
+    if(m.lambdaH&&teamData[m.home]){
+      teamData[m.home].hLSum+=m.lambdaH;
+      if(m.xgH!=null){teamData[m.home].hXGSum+=m.xgH;teamData[m.home].hN++;}
+    }
+  });
+  var suggestions=[];
+  TN.forEach(function(t){
+    var d=teamData[t];
+    if(d.hN<6) return;
+    var hBias=(d.hXGSum-d.hLSum)/d.hN;
+    var hRel=d.hLSum>0?(d.hXGSum-d.hLSum)/d.hLSum:0;
+    if(Math.abs(hBias)<0.12) return;
+    var rec=Math.round(Math.max(-0.25,Math.min(0.25,hRel*0.5))*20)/20;
+    if(Math.abs(rec)<0.05) return;
+    suggestions.push({t:t,bias:hBias,rel:hRel,n:d.hN,rec:rec});
+  });
+  if(!suggestions.length){box.innerHTML='';return;}
+  var html='<div style="background:var(--gdbg);border:1px solid var(--gdbdr);border-radius:6px;padding:9px 11px">';
+  html+='<div style="font-size:9px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--gd);margin-bottom:7px">&#9889; Nudge-suositukset (xG vs &#955; -datan perusteella)</div>';
+  suggestions.forEach(function(s){
+    var dirTxt=s.bias>0?'kotihyökkäys aliarvioitu':'kotihyökkäys yliarvioitu';
+    var dc=s.bias>0?'var(--gr)':'var(--rd)';
+    html+='<div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid var(--gdbdr);flex-wrap:wrap">'+
+      '<span style="min-width:100px;font-weight:700;font-size:11px">'+TNAME[s.t]+'</span>'+
+      '<span style="font-size:10px;color:'+dc+'">'+dirTxt+' <span style="font-family:var(--mono)">'+(s.bias>0?'+':'')+s.bias.toFixed(3)+'/peli</span></span>'+
+      '<span style="font-size:9px;color:var(--mu);font-family:var(--mono)">('+s.n+'p, '+Math.round(s.rel*100)+'%)</span>'+
+      '<span style="color:var(--gd);font-size:10px">&#8594; suositus: <strong style="font-family:var(--mono)">'+(s.rec>0?'+':'')+Math.round(s.rec*100)+'%</strong></span>'+
+      '<button onclick="applyNudgeSuggestion(\''+s.t+'\','+s.rec+')" style="font-size:9px;padding:3px 9px;border-radius:4px;border:1px solid var(--gdbdr);background:var(--gdbg);color:var(--gd);cursor:pointer;font-weight:700">Sovella</button>'+
+    '</div>';
+  });
+  html+='<div style="font-size:9px;color:var(--mu);font-family:var(--mono);margin-top:5px">Suositus = bias &#215; 0.5 &#183; min 6 peli&#228; &#183; tarkista Seuranta&#8594;xG vs &#955; ensin</div></div>';
+  box.innerHTML=html;
+}
+
+function applyNudgeSuggestion(t,rec){
+  N[t]=Math.round(Math.max(-0.30,Math.min(0.30,(N[t]||0)+rec))*100)/100;
+  renderNudges();saveAll();run();
+}
+
+function nudge(t,d){N[t]=Math.round(Math.max(-0.30,Math.min(0.30,N[t]+d))*1000)/1000;renderNudges();saveAll();run();}
+function resetNudges(){TN.forEach(function(t){N[t]=0;});renderNudges();saveAll();run();}
+
+// ═══════════════ CALIB ═══════════════
+function renderCalib(){
+  var maxHE=Math.max.apply(null,TN.map(function(t){return HE[t]||1;}));
+  document.getElementById('heViz').innerHTML=TN.map(function(t){var he=HE[t]||1,p2=((he/maxHE)*100).toFixed(0),c=he>1.15?'var(--gr)':he<0.85?'var(--rd)':'var(--mu)';return'<div class="he-row"><span class="he-name">'+TNAME[t]+'</span><div class="he-track"><div class="he-fill" style="width:'+p2+'%;background:'+c+'"></div></div><span class="he-val" style="color:'+c+'">'+he.toFixed(3)+'</span></div>';}).join('');
+  var ct='<table><thead><tr><th class="L">Joukkue</th><th>Posterior hgf</th><th>Posterior hga</th><th>Posterior agf</th><th>Posterior aga</th><th>Koti/Vier p</th></tr></thead><tbody>';
+  TN.forEach(function(t){
+    var b=BAYES[t]||{home_n:0,away_n:0};
+    var eff=getEffXG(t), d=XG_DEFAULT[t];
+    var hmod=b.home_n>0, amod=b.away_n>0;
+    function dc2(post,prior){var d2=post-prior;return d2>0.02?'pos':d2<-0.02?'neg':'neu';}
+    ct+='<tr>'+
+      '<td class="L" style="font-weight:700;color:'+(hmod||amod?'var(--gr)':'var(--tx)')+'">'+TNAME[t]+(hmod||amod?' ✱':'')+'</td>'+
+      '<td class="'+dc2(eff.hgf,d.hgf)+'">'+eff.hgf.toFixed(3)+'</td>'+
+      '<td class="'+dc2(eff.hga,d.hga)+'">'+eff.hga.toFixed(3)+'</td>'+
+      '<td class="'+dc2(eff.agf,d.agf)+'">'+eff.agf.toFixed(3)+'</td>'+
+      '<td class="'+dc2(eff.aga,d.aga)+'">'+eff.aga.toFixed(3)+'</td>'+
+      '<td style="color:var(--mu)">'+b.home_n+'/'+b.away_n+'</td>'+
+    '</tr>';
+  });
+  ct+='</tbody></table>';
+  document.getElementById('calibTable').innerHTML=ct;
+  var ms=matches.filter(function(m){return m.brier!=null;});
+  var avgBrier=ms.length>0?ms.reduce(function(s,m){return s+m.brier;},0)/ms.length:null;
+  document.getElementById('calBrier').textContent=avgBrier!=null?avgBrier.toFixed(4)+'  ('+ms.length+'p)':'—';
+  renderBayesViz();
+}
+
+function renderBayesViz(){
+  function xgBar(label, prior, obs_sum, n_obs, isGood) {
+    var post = posterior(prior, obs_sum, n_obs);
+    var dw = dataWeight(n_obs);
+    var diff = post - prior;
+    var diffColor = diff > 0.02 ? 'var(--gr)' : diff < -0.02 ? 'var(--rd)' : 'var(--mu)';
+    var maxV = Math.max(prior, post, 1.0);
+    var priorPct = Math.round(prior/maxV*100);
+    var postPct = Math.round(post/maxV*100);
+    var barColor = isGood ? 'var(--gr)' : 'var(--bl)';
+    return '<div style="margin-bottom:7px">'+
+      '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:2px">'+
+        '<span style="font-size:9px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--mu)">'+label+'</span>'+
+        '<div style="font-size:9px;font-family:var(--mono)">'+
+          '<span style="color:var(--dim)">'+prior.toFixed(3)+'</span>'+
+          '<span style="color:var(--mu)"> → </span>'+
+          '<span style="color:'+diffColor+';font-weight:700">'+post.toFixed(3)+'</span>'+
+          (n_obs>0?'<span style="color:var(--dim);margin-left:5px">'+dw+'% data</span>':'<span style="color:var(--dim);margin-left:5px">priori</span>')+
+        '</div>'+
+      '</div>'+
+      '<div style="position:relative;height:12px;background:var(--s2);border-radius:3px;overflow:hidden">'+
+        '<div style="position:absolute;inset:0;width:'+priorPct+'%;background:var(--bdr2)" title="Priori"></div>'+
+        '<div style="position:absolute;inset:0;width:'+postPct+'%;background:'+barColor+'33;border-right:2px solid '+barColor+'" title="Posterior"></div>'+
+      '</div>'+
+    '</div>';
+  }
+
+  var bHtml = '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px">';
+  TN.forEach(function(t) {
+    var b = BAYES[t] || {hgf_sum:0,hga_sum:0,agf_sum:0,aga_sum:0,home_n:0,away_n:0};
+    var d = XG_DEFAULT[t];
+    var hasData = b.home_n > 0 || b.away_n > 0;
+    bHtml += '<div style="background:var(--s2);border:1px solid var(--bdr)'+(hasData?';border-top:2px solid var(--gr)':'')+';border-radius:7px;padding:10px">'+
+      '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">'+
+        '<span style="font-size:11px;font-weight:700">'+TNAME[t]+'</span>'+
+        '<span style="font-size:9px;font-family:var(--mono);color:'+(hasData?'var(--gr)':'var(--dim)')+'">'+
+          (hasData?b.home_n+'k / '+b.away_n+'v':'ei dataa')+
+        '</span>'+
+      '</div>'+
+      xgBar('xGF koti', d.hgf, b.hgf_sum, b.home_n, true)+
+      xgBar('xGA koti', d.hga, b.hga_sum, b.home_n, false)+
+      xgBar('xGF vieras', d.agf, b.agf_sum, b.away_n, true)+
+      xgBar('xGA vieras', d.aga, b.aga_sum, b.away_n, false)+
+    '</div>';
+  });
+  bHtml += '</div>';
+  bHtml += '<div style="font-size:9px;color:var(--mu);font-family:var(--mono);margin-top:8px;line-height:2">'+
+    'Kaava: posterior = ('+N_PRIOR+' × priori + Σxg_havainnot) / ('+N_PRIOR+' + pelejä) · '+
+    'Harmaa = priori · Värillinen = posterior · ✱ = havaintoja saatu · '+
+    'Data-paino 12 peliä: '+dataWeight(12)+'% · 22 peliä: '+dataWeight(22)+'%</div>';
+  document.getElementById('bayesViz').innerHTML = bHtml;
+  renderDecileCalib();
+}
+
+function renderDecileCalib(){
+  var el=document.getElementById('decileCalib');
+  if(!el) return;
+  var ms=matches.filter(function(m){return m.modelP!=null&&m.result;});
+  if(ms.length<10){
+    el.innerHTML='<div style="font-size:10px;color:var(--mu);font-family:var(--mono);padding:8px 0">Tarvitaan vähintään 10 ottelua mallinnusP:llä. Nyt: '+ms.length+'.</div>';
+    return;
+  }
+  // Jaa 10 desiilin (0-10%, 10-20%, ..., 90-100%)
+  var deciles=[];
+  for(var d=0;d<10;d++) deciles.push({lo:d*10,hi:(d+1)*10,predicted:[],actual:[]});
+  ms.forEach(function(m){
+    var p=m.modelP; // jo tallennettuna prosentteina
+    var won=(m.result==='1')?1:0;
+    var di=Math.min(9,Math.floor(p/10));
+    deciles[di].predicted.push(p/100);
+    deciles[di].actual.push(won);
+  });
+  // SVG kalibrointikaavio
+  var W=420,H=220,PAD=36;
+  var svgW=W+PAD*2, svgH=H+PAD*2;
+  var html='<svg viewBox="0 0 '+(svgW)+' '+(svgH)+'" style="width:100%;max-width:500px;display:block;margin-bottom:8px" xmlns="http://www.w3.org/2000/svg">';
+  // Akselit
+  html+='<line x1="'+PAD+'" y1="'+PAD+'" x2="'+PAD+'" y2="'+(PAD+H)+'" stroke="var(--bdr2)" stroke-width="1"/>';
+  html+='<line x1="'+PAD+'" y1="'+(PAD+H)+'" x2="'+(PAD+W)+'" y2="'+(PAD+H)+'" stroke="var(--bdr2)" stroke-width="1"/>';
+  // Diagonaali (täydellinen kalibrointi)
+  html+='<line x1="'+PAD+'" y1="'+(PAD+H)+'" x2="'+(PAD+W)+'" y2="'+PAD+'" stroke="var(--bdr2)" stroke-width="1" stroke-dasharray="4,4" opacity="0.5"/>';
+  // X-akseli labelit
+  for(var xi=0;xi<=10;xi++){
+    var xp=PAD+xi*(W/10);
+    html+='<text x="'+xp+'" y="'+(PAD+H+14)+'" font-size="8" fill="var(--mu)" text-anchor="middle">'+(xi*10)+'%</text>';
+  }
+  // Y-akseli labelit
+  for(var yi=0;yi<=10;yi++){
+    var yp=PAD+H-yi*(H/10);
+    html+='<text x="'+(PAD-5)+'" y="'+(yp+3)+'" font-size="8" fill="var(--mu)" text-anchor="end">'+(yi*10)+'%</text>';
+  }
+  // Pisteet per desiili
+  var points=[];
+  deciles.forEach(function(d){
+    if(!d.predicted.length) return;
+    var avgPred=d.predicted.reduce(function(s,v){return s+v;},0)/d.predicted.length;
+    var avgAct=d.actual.reduce(function(s,v){return s+v;},0)/d.actual.length;
+    var n=d.predicted.length;
+    var x=PAD+avgPred*W;
+    var y=PAD+H-avgAct*H;
+    var r=Math.max(4,Math.min(10,n*1.5));
+    var aboveD=avgAct>avgPred;
+    var c=Math.abs(avgAct-avgPred)>0.10?(aboveD?'#00C896':'#FF4757'):'#6B7E8F';
+    html+='<circle cx="'+x.toFixed(1)+'" cy="'+y.toFixed(1)+'" r="'+r.toFixed(1)+'" fill="'+c+'" opacity="0.8"/>';
+    html+='<text x="'+x.toFixed(1)+'" y="'+(y-r-2).toFixed(1)+'" font-size="8" fill="'+c+'" text-anchor="middle">'+n+'p</text>';
+    points.push({x:x,y:y,pred:avgPred,act:avgAct,n:n,lo:d.lo,hi:d.hi});
+  });
+  // Viiva pisteiden välillä
+  if(points.length>1){
+    var path='M'+points[0].x.toFixed(1)+','+points[0].y.toFixed(1);
+    points.slice(1).forEach(function(p){path+=' L'+p.x.toFixed(1)+','+p.y.toFixed(1);});
+    html+='<path d="'+path+'" stroke="var(--bl)" stroke-width="1.5" fill="none" opacity="0.6"/>';
+  }
+  html+='<text x="'+(PAD+W/2)+'" y="'+(svgH-2)+'" font-size="8" fill="var(--mu)" text-anchor="middle">Mallin ennuste</text>';
+  html+='<text x="10" y="'+(PAD+H/2)+'" font-size="8" fill="var(--mu)" text-anchor="middle" transform="rotate(-90,10,'+(PAD+H/2)+')">Toteutunut</text>';
+  html+='</svg>';
+  // Taulukko
+  html+='<div class="tw"><table><thead><tr><th class="L">Desiili</th><th>N</th><th>Mallin ennuste</th><th>Toteutunut</th><th>Virhe</th><th>Tulkinta</th></tr></thead><tbody>';
+  points.forEach(function(p){
+    var err=p.act-p.pred;
+    var errC=Math.abs(err)>0.10?(err>0?'var(--gr)':'var(--rd)'):'var(--mu)';
+    var interp=Math.abs(err)<0.05?'✓ Kalibroitu':err>0.10?'↑ Ali':'↓ Yli';
+    html+='<tr>'+
+      '<td class="L">'+p.lo+'–'+p.hi+'%</td>'+
+      '<td>'+p.n+'</td>'+
+      '<td style="font-family:var(--mono)">'+(p.pred*100).toFixed(1)+'%</td>'+
+      '<td style="font-family:var(--mono)">'+(p.act*100).toFixed(1)+'%</td>'+
+      '<td style="color:'+errC+';font-family:var(--mono)">'+(err>=0?'+':'')+(err*100).toFixed(1)+'%</td>'+
+      '<td style="color:'+errC+'">'+interp+'</td>'+
+    '</tr>';
+  });
+  html+='</tbody></table></div>';
+  html+='<div style="font-size:9px;color:var(--mu);font-family:var(--mono);margin-top:5px;line-height:1.9">'+
+    'Pisteiden koko = otteluiden määrä · Harmaa diagonaali = täydellinen kalibrointi · '+
+    'Vihreä = malli aliarvioi · Punainen = malli yliarvioi · Piste n=alle 5 ei luotettava</div>';
+  el.innerHTML=html;
+}
+
+// ═══════════════ UPDATE / PÄIVITYS ═══════════════
+function updPossAway(el, ri){
+  var v=parseInt(el.value);
+  var sp=document.getElementById('updposs-away-'+ri);
+  if(sp) sp.textContent=(!isNaN(v)&&v>=0&&v<=100)?(100-v)+'%':'—';
+}
+function renderUpdateRows(){
+  var r=parseInt(document.getElementById('roundNum').value)||1;
+  var html='<div style="font-size:10px;font-family:var(--mono);color:var(--gd);margin-bottom:10px">Kierros '+r+' — syötä toteutuneet luvut:</div>';
+  html+='<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:11px">';
+  var TH=function(label,color,title){return'<th style="background:var(--s1);padding:7px 6px;border-bottom:1px solid var(--bdr);font-size:9px;font-weight:700;letter-spacing:.08em;color:'+(color||'var(--mu)')+';text-align:center;white-space:nowrap"'+(title?' title="'+title+'"':'')+'>'+label+'</th>';};
+  html+='<thead><tr>'+
+    '<th class="L" style="background:var(--s1);padding:7px 8px;border-bottom:1px solid var(--bdr);font-size:9px;font-weight:700;letter-spacing:.08em;color:var(--mu)">Ottelu (Koti vs Vieras)</th>'+
+    TH('Maalit<br>Koti','var(--gr)','Kotijoukkueen tekemät maalit')+
+    TH('Maalit<br>Vieras','var(--gr)','Vierasjoukkueen tekemät maalit')+
+    TH('xG<br>Koti','#00C896','Odotetut maalit — kotijoukkue (Sofascore/FBref)')+
+    TH('xG<br>Vieras','#00C896','Odotetut maalit — vierasjoukkue')+
+    TH('Maalivahti-<br>laukaukset K','var(--bl)','Shots on target — kotijoukkue (laukaukset joihin maalivahti puuttui tai meni maaliin)')+
+    TH('Maalivahti-<br>laukaukset V','var(--bl)','Shots on target — vierasjoukkue')+
+    TH('Pallonhallinta<br>Koti %','var(--am)','Kotijoukkueen pallonhallintaprosentti (0–100). Vieraalla tulee automaattisesti 100 miinus tämä.')+
+    TH('Punainen<br>kortti','var(--rd)','Saiko jompikumpi joukkue punaisen kortin?')+
+    TH('Sulk.<br>kerroin 1','var(--mu)','Sulkemiskerroin — kotijoukkueen voitto (Pinnacle tms.)')+
+    TH('Sulk.<br>kerroin X','var(--mu)','Sulkemiskerroin — tasapeli')+
+    TH('Sulk.<br>kerroin 2','var(--mu)','Sulkemiskerroin — vierasjoukkueen voitto')+
+    TH('Sulk.<br>Over 2.5','var(--mu)','Sulkemiskerroin — yli 2.5 maalia')+
+    TH('Mallin P(1)<br>ennen peliä %','var(--mu)','Mallin laskema todennäköisyys (%%) kotijoukkueen voitolle ENNEN ottelua. Käytetään Brier score -laskentaan. Ei vaikuta Bayesiläiseen päivitykseen.')+
+    '</tr></thead><tbody>';
+
+  for(var ri=0;ri<6;ri++){
+    var prefix='upd-'+ri+'-';
+    html+='<tr style="border-bottom:1px solid var(--bdr)">';
+    // Joukkue-dropdownit
+    html+='<td class="L" style="padding:5px 6px;min-width:200px">';
+    html+='<select id="'+prefix+'home" style="width:95px;font-size:11px;padding:4px 6px;margin-right:4px"><option value="">— Koti —</option>'+TN.map(function(t){return'<option value="'+t+'">'+TNAME[t]+'</option>';}).join('')+'</select>';
+    html+='<span style="color:var(--mu);font-size:10px">vs</span> ';
+    html+='<select id="'+prefix+'away" style="width:95px;font-size:11px;padding:4px 6px;margin-left:4px"><option value="">— Vieras —</option>'+TN.map(function(t){return'<option value="'+t+'">'+TNAME[t]+'</option>';}).join('')+'</select>';
+    html+='</td>';
+    // Tulos-dropdownit
+    var goals=[0,1,2,3,4,5,6,7,8];
+    var gOpts=goals.map(function(g){return'<option value="'+g+'">'+g+'</option>';}).join('');
+    html+='<td style="padding:5px 4px;text-align:center"><select id="'+prefix+'hg" style="width:52px;font-size:12px;font-weight:700;padding:4px 5px;text-align:center;color:var(--gr)"><option value="">—</option>'+gOpts+'</select></td>';
+    html+='<td style="padding:5px 4px;text-align:center"><select id="'+prefix+'ag" style="width:52px;font-size:12px;font-weight:700;padding:4px 5px;text-align:center;color:var(--gr)"><option value="">—</option>'+gOpts+'</select></td>';
+    // xG-kentät
+    function inp(id,ph,w){return'<td style="padding:5px 4px;text-align:center"><input type="number" id="'+prefix+id+'" placeholder="'+ph+'" step="0.01" style="width:'+(w||54)+'px;padding:4px 5px;font-size:11px;text-align:center"></td>';}
+    html+=inp('xgH','0.0')+inp('xgA','0.0');
+    // Laukaukset
+    html+=inp('shotH','—',50)+inp('shotA','—',50);
+    // Pallonhallinta koti %
+    html+='<td style="padding:5px 4px;text-align:center"><input type="number" id="'+prefix+'poss" placeholder="50" step="1" min="0" max="100" style="width:46px;padding:4px 5px;font-size:11px;text-align:center" oninput="updPossAway(this,'+ri+')"><br><span style="font-size:9px;color:var(--mu);font-family:var(--mono)">V: <span id="updposs-away-'+ri+'">&#8212;</span></span></td>';
+    // Punainen kortti
+    html+='<td style="padding:5px 4px;text-align:center"><select id="'+prefix+'rc" style="font-size:11px;padding:4px 5px;width:80px"><option value="">Ei</option><option value="home">Koti</option><option value="away">Vieras</option><option value="both">Molemmat</option></select></td>';
+    // Sulkemiskertoimet
+    html+=inp('cl1','1.85')+inp('clX','3.40')+inp('cl2','3.80')+inp('clO25','1.75');
+    // Mallin P(1)
+    html+=inp('modelP','55',52);
+    html+='</tr>';
+  }
+  html+='</tbody></table></div>';
+  document.getElementById('updateRows').innerHTML=html;
+}
+
+function applyUpdate(){
+  var r=parseInt(document.getElementById('roundNum').value)||1;
+  var added=[], xgUpdates=[];
+  for(var ri=0;ri<6;ri++){
+    var prefix='upd-'+ri+'-';
+    var hn=document.getElementById(prefix+'home').value;
+    var an=document.getElementById(prefix+'away').value;
+    if(!hn||!an||hn===an)continue;
+    var hg=document.getElementById(prefix+'hg').value;
+    var ag=document.getElementById(prefix+'ag').value;
+    if(hg===''||ag==='')continue;
+    hg=parseInt(hg); ag=parseInt(ag);
+    var xgH=parseFloat(document.getElementById(prefix+'xgH').value)||null;
+    var xgA=parseFloat(document.getElementById(prefix+'xgA').value)||null;
+    var shotH=parseInt(document.getElementById(prefix+'shotH').value)||null;
+    var shotA=parseInt(document.getElementById(prefix+'shotA').value)||null;
+    var poss=parseInt(document.getElementById(prefix+'poss').value)||null;
+    var rc=document.getElementById(prefix+'rc').value||null;
+    var cl1=parseFloat(document.getElementById(prefix+'cl1').value)||null;
+    var clX=parseFloat(document.getElementById(prefix+'clX').value)||null;
+    var cl2=parseFloat(document.getElementById(prefix+'cl2').value)||null;
+    var clO25=parseFloat(document.getElementById(prefix+'clO25').value)||null;
+    var modelP=parseFloat(document.getElementById(prefix+'modelP').value)||null;
+
+    var result=hg>ag?'1':hg===ag?'X':'2';
+    // Bayesilainen päivitys ENSIN — jotta λ lasketaan päivitetyllä posteriorilla
+    if(!BAYES[hn]) BAYES[hn]={hgf_sum:0,hga_sum:0,agf_sum:0,aga_sum:0,home_n:0,away_n:0,lH_sum:0,lA_sum:0};
+    if(!BAYES[an]) BAYES[an]={hgf_sum:0,hga_sum:0,agf_sum:0,aga_sum:0,home_n:0,away_n:0,lH_sum:0,lA_sum:0};
+    if(xgH!=null && xgA!=null) {
+      BAYES[hn].hgf_sum += xgH; BAYES[hn].hga_sum += xgA; BAYES[hn].home_n++;
+      BAYES[an].agf_sum += xgA; BAYES[an].aga_sum += xgH; BAYES[an].away_n++;
+    }
+    // Lasketaan mallin λ-ennuste PÄIVITETYLLÄ posteriorilla (xG vs λ -analyysiä varten)
+    var lr = getLambdas(hn, an);
+    BAYES[hn].lH_sum += lr.lH;
+    BAYES[an].lA_sum += lr.lA;
+    // Brier score — käytetään mallin oikeita todennäköisyyksiä lambdoista
+    var brier=null;
+    if(modelP!=null){
+      var mp_calc = matchProbs(hn, an);
+      // P(1) syötetään käsin (modelP), P(X) ja P(2) lasketaan mallista
+      // Jos mallin P(1) eroaa syötetystä, skaalataan X ja 2 suhteessa
+      var p1=modelP/100;
+      var modelRatio = mp_calc.pH > 0 ? p1/mp_calc.pH : 1;
+      var px=Math.max(0, Math.min(0.5, mp_calc.pD * modelRatio));
+      var p2=Math.max(0, 1-p1-px);
+      // Normalisoidaan
+      var tot3=p1+px+p2; if(tot3>0){p1/=tot3;px/=tot3;p2/=tot3;}
+      var o1=result==='1'?1:0, ox=result==='X'?1:0, o2=result==='2'?1:0;
+      brier=(p1-o1)*(p1-o1)+(px-ox)*(px-ox)+(p2-o2)*(p2-o2);
+    }
+    var match={
+      id:Date.now()+ri, round:r, date:new Date().toLocaleDateString('fi-FI'),
+      home:hn, away:an, homeN:TNAME[hn], awayN:TNAME[an],
+      hg:hg, ag:ag, result:result,
+      xgH:xgH, xgA:xgA, shotH:shotH, shotA:shotA, poss:poss, rc:rc,
+      cl1:cl1, clX:clX, cl2:cl2, clO25:clO25,
+      modelP:modelP, brier:brier,
+      lambdaH: parseFloat(lr.lH.toFixed(4)),
+      lambdaA: parseFloat(lr.lA.toFixed(4))
+    };
+    matches.push(match);
+    added.push(TNAME[hn]+' '+hg+'-'+ag+' '+TNAME[an]);
+
+    // Kirjaa xG-päivitys lokiin (Bayesian päivitys tehty jo aiemmin)
+    if(xgH!=null && xgA!=null) {
+      xgUpdates.push(TNAME[hn]+' posterior hgf→'+getEffXG(hn).hgf.toFixed(3));
+    }
+    // Update CLV for matching bets
+    bets.forEach(function(b){
+      if(b.home===hn&&b.away===an&&b.round===r&&b.result==null){
+        b.result=result;
+        var won=(b.mkt==='H'&&result==='1')||(b.mkt==='D'&&result==='X')||(b.mkt==='A'&&result==='2')||
+                (b.mkt==='O25'&&hg+ag>2)||(b.mkt==='O35'&&hg+ag>3)||(b.mkt==='U25'&&hg+ag<=2)||
+                (b.mkt==='BTTS'&&hg>0&&ag>0);
+        b.profit=won?b.stake*(b.odds-1):-b.stake;
+        if(!b.clv&&b.mkt==='H'&&cl1)b.clv=b.odds/cl1-1;
+        if(!b.clv&&b.mkt==='D'&&clX)b.clv=b.odds/clX-1;
+        if(!b.clv&&b.mkt==='A'&&cl2)b.clv=b.odds/cl2-1;
+        if(!b.clv&&b.mkt==='O25'&&clO25)b.clv=b.odds/clO25-1;
+      }
+    });
+  }
+  if(!added.length){var el=document.getElementById('updateMsg');el.style.color='var(--rd)';el.textContent='Täytä vähintään yksi rivi (koti+vieras+tulos)!';return;}
+  if(xgUpdates.length){xgLog.unshift({date:new Date().toLocaleDateString('fi-FI'),round:r,changes:xgUpdates});}
+  saveAll();renderUpdateHistory();renderTrackKpi();renderBetHist();renderTrack();renderTable();run();
+  var el=document.getElementById('updateMsg');
+  el.style.color='var(--gr)';
+  el.textContent='✓ Tallennettu: '+added.join(' · ')+(xgUpdates.length?' | xG päivitetty '+xgUpdates.length+' joukkueelle':'');
+}
+
+function resetXG(){
+  if(!confirm('Palauta kaikki xG VL2025-oletuksiin ja nollaa Bayesian data?'))return;
+  TN.forEach(function(t){XG[t]=JSON.parse(JSON.stringify(XG_DEFAULT[t]));});
+  TN.forEach(function(t){BAYES[t]={hgf_sum:0,hga_sum:0,agf_sum:0,aga_sum:0,home_n:0,away_n:0,lH_sum:0,lA_sum:0};});
+  xgLog.unshift({date:new Date().toLocaleDateString('fi-FI'),round:0,changes:['Palautettu VL2025-oletuksiin, Bayes nollattu']});
+  saveAll();renderUpdateHistory();run();renderCalib();
+  document.getElementById('updateMsg').textContent='VL2025-oletukset palautettu, Bayesian data nollattu.';
+}
+
+function renderUpdateHistory(){
+  if(!xgLog.length){document.getElementById('xgHistory').textContent='Ei päivityksiä.';return;}
+  document.getElementById('xgHistory').innerHTML=xgLog.slice(0,10).map(function(e){
+    return '<div style="padding:4px 0;border-bottom:1px solid var(--bdr)"><span style="color:var(--gd)">'+e.date+' K'+e.round+'</span> — '+e.changes.join(', ')+'</div>';
+  }).join('');
+}
+
+// ═══════════════ SEURANTA / TRACK ═══════════════
+function renderTrackKpi(){
+  var ms=matches, bs=bets;
+  var total=ms.length;
+  var withBrier=ms.filter(function(m){return m.brier!=null;});
+  var avgBrier=withBrier.length>0?withBrier.reduce(function(s,m){return s+m.brier;},0)/withBrier.length:null;
+  var settledBets=bs.filter(function(b){return b.profit!=null;});
+  var openBets=bs.filter(function(b){return b.profit==null;});
+  var totalStake=settledBets.reduce(function(s,b){return s+b.stake;},0);
+  var totalProfit=settledBets.reduce(function(s,b){return s+b.profit;},0);
+  var roi=totalStake>0?totalProfit/totalStake*100:null;
+  var wins=settledBets.filter(function(b){return b.profit>0;}).length;
+  var clvs=bs.filter(function(b){return b.clv!=null;});
+  var avgClv=clvs.length>0?clvs.reduce(function(s,b){return s+b.clv;},0)/clvs.length:null;
+  var rcMs=ms.filter(function(m){return m.rc&&m.rc!==''&&m.rc!=='';});
+
+  document.getElementById('trkKpi').innerHTML=[
+    {l:'Otteluita',v:total||'—',s:'merkitty',c:'b'},
+    {l:'Brier Score',v:avgBrier!=null?avgBrier.toFixed(4):'—',s:avgBrier!=null&&avgBrier<0.5804?'Parempi kuin Pinnacle!':'Pinnacle: 0.5804',c:avgBrier!=null&&avgBrier<0.5804?'g':avgBrier!=null?'r':''},
+    {l:'Vetoja',v:bs.length||'—',s:'avoimia: '+openBets.length,c:''},
+    {l:'ROI',v:roi!=null?(roi>=0?'+':'')+roi.toFixed(1)+'%':'—',s:(totalProfit>=0?'+':'')+totalProfit.toFixed(2)+'€',c:roi!=null&&roi>0?'g':roi!=null?'r':''},
+    {l:'Hit rate',v:settledBets.length>0?pct(wins/settledBets.length):'—',s:wins+'/'+settledBets.length,c:settledBets.length>0&&wins/settledBets.length>0.5?'g':''},
+    {l:'Avg CLV',v:avgClv!=null?(avgClv>=0?'+':'')+( avgClv*100).toFixed(1)+'%':'—',s:clvs.length+' CLV-vetoa',c:avgClv!=null&&avgClv>0?'g':avgClv!=null?'r':''},
+  ].map(function(x){return'<div class="kpi '+(x.c||'')+'"><div class="kl">'+x.l+'</div><div class="kv '+(x.c||'')+'">'+x.v+'</div><div class="ks">'+x.s+'</div></div>';}).join('');
+
+  // Brier bars per round
+  var rounds={};
+  withBrier.forEach(function(m){if(!rounds[m.round])rounds[m.round]={sum:0,n:0};rounds[m.round].sum+=m.brier;rounds[m.round].n++;});
+  var rkeys=Object.keys(rounds).sort(function(a,b){return a-b;});
+  var barsHtml=rkeys.length?'<div class="bar-wrap">'+rkeys.map(function(r){var avg=rounds[r].sum/rounds[r].n,h=Math.round((avg/0.667)*56)+2,c=avg<0.5804?'var(--gr)':avg<0.62?'var(--gd)':'var(--rd)';return'<div class="bar-item"><div class="bar-b" style="height:'+h+'px;background:'+c+'"></div><div class="bar-lbl">K'+r+'<br>'+avg.toFixed(3)+'</div></div>';}).join('')+'</div>':'<div style="font-size:10px;color:var(--mu);font-family:var(--mono)">Ei vielä dataa — syötä tuloksia Päivitys-välilehdellä.</div>';
+  document.getElementById('brierBars').innerHTML=barsHtml;
+  renderXGvsLambda();
+  renderCLVByMarket();
+}
+
+function renderXGvsLambda() {
+  var el = document.getElementById('xgLambdaViz');
+  if (!el) return;
+  var teamData = {};
+  TN.forEach(function(t) {
+    teamData[t] = {name:TNAME[t], hLSum:0, hXGSum:0, hN:0, aLSum:0, aXGSum:0, aN:0};
+  });
+  matches.forEach(function(m) {
+    if (m.lambdaH && teamData[m.home]) {
+      teamData[m.home].hLSum += m.lambdaH;
+      if (m.xgH != null) { teamData[m.home].hXGSum += m.xgH; teamData[m.home].hN++; }
+    }
+    if (m.lambdaA && teamData[m.away]) {
+      teamData[m.away].aLSum += m.lambdaA;
+      if (m.xgA != null) { teamData[m.away].aXGSum += m.xgA; teamData[m.away].aN++; }
+    }
+  });
+  var rows = TN.map(function(t) { return teamData[t]; })
+    .filter(function(d) { return d.hN > 0 || d.aN > 0; });
+  if (!rows.length) {
+    el.innerHTML = '<div style="font-size:10px;color:var(--mu);font-family:var(--mono);padding:8px 0">Ei dataa — syötä tuloksia Päivitys-välilehdellä (täytä xG-kentät).</div>';
+    return;
+  }
+  var html = '<div class="tw"><table><thead><tr>'+
+    '<th class="L">Joukkue</th>'+
+    '<th>λ k.</th><th>xG k.</th><th>Bias k.</th>'+
+    '<th>λ v.</th><th>xG v.</th><th>Bias v.</th>'+
+    '<th>Luotett.</th></tr></thead><tbody>';
+  rows.sort(function(a,b){
+    var ab=a.hN>0?Math.abs(a.hXGSum/a.hN-a.hLSum/a.hN):0;
+    var bb=b.hN>0?Math.abs(b.hXGSum/b.hN-b.hLSum/b.hN):0;
+    return bb-ab;
+  });
+  rows.forEach(function(d) {
+    var hAvgL=d.hN>0?d.hLSum/d.hN:null, hAvgXG=d.hN>0?d.hXGSum/d.hN:null;
+    var aAvgL=d.aN>0?d.aLSum/d.aN:null, aAvgXG=d.aN>0?d.aXGSum/d.aN:null;
+    var hBias=hAvgL!=null?hAvgXG-hAvgL:null, aBias=aAvgL!=null?aAvgXG-aAvgL:null;
+    var maxN=Math.max(d.hN,d.aN);
+    var trust=maxN>=10?'<span style="color:var(--gr)">✓</span>':maxN>=6?'<span style="color:var(--gd)">~</span>':'<span style="color:var(--mu)">!</span>';
+    function bc(bias){
+      if(bias==null)return '<td style="color:var(--dim)">—</td>';
+      var c=Math.abs(bias)>0.15?(bias>0?'var(--gr)':'var(--rd)'):Math.abs(bias)>0.07?(bias>0?'var(--gd)':'var(--rd)'):'var(--mu)';
+      var arrow=bias>0.07?'↑':bias<-0.07?'↓':'≈';
+      return '<td style="color:'+c+';font-weight:'+(Math.abs(bias)>0.10?'700':'400')+'">'+(bias>=0?'+':'')+bias.toFixed(3)+' '+arrow+'</td>';
+    }
+    html+='<tr>'+
+      '<td class="L" style="font-weight:700">'+d.name+'</td>'+
+      (hAvgL!=null?'<td>'+hAvgL.toFixed(2)+'</td><td>'+hAvgXG.toFixed(2)+'</td>':'<td style="color:var(--dim)">—</td><td style="color:var(--dim)">—</td>')+
+      bc(hBias)+
+      (aAvgL!=null?'<td>'+aAvgL.toFixed(2)+'</td><td>'+aAvgXG.toFixed(2)+'</td>':'<td style="color:var(--dim)">—</td><td style="color:var(--dim)">—</td>')+
+      bc(aBias)+'<td>'+trust+'</td></tr>';
+  });
+  html+='</tbody></table></div>';
+  html+='<div style="font-size:9px;color:var(--mu);font-family:var(--mono);margin-top:5px;line-height:2">'+
+    'Bias=xG−λ per peli · ↑ malli aliarvioi · ↓ yliarvioi · |bias|>0.15 → korjaa nudgella · '+
+    '✓=10+p luotettava · ~=6-9p alustava · !=alle 6p</div>';
+
+  // Kokoonpanomuutosten kumulatiivinen vaikutus
+  var luSummary = [];
+  TN.forEach(function(t) {
+    var tObj = TMAP[t];
+    if (!tObj) return;
+    var lu = getLuCorr(t);
+    if (lu.changes.length === 0) return;
+    luSummary.push({name: TNAME[t], xgf: lu.xgf, xga: lu.xga, changes: lu.changes});
+  });
+  if (luSummary.length > 0) {
+    html += '<div style="margin-top:10px;background:var(--gdbg);border:1px solid var(--gdbdr);border-radius:6px;padding:9px 11px">'+
+      '<div style="font-size:9px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--gd);margin-bottom:7px">'+
+        'Nykyiset kokoonpanomuutokset — vaikutus malliin</div>'+
+      luSummary.map(function(d) {
+        var xgfColor = d.xgf < -0.015 ? 'var(--rd)' : d.xgf > 0.01 ? 'var(--gr)' : 'var(--mu)';
+        var xgaColor = d.xga > 0.015 ? 'var(--rd)' : 'var(--mu)';
+        return '<div style="display:flex;align-items:center;gap:8px;padding:4px 0;border-bottom:1px solid var(--gdbdr);font-size:10px">'+
+          '<span style="min-width:110px;font-weight:700">'+d.name+'</span>'+
+          '<span style="font-family:var(--mono);color:'+xgfColor+'">xGF '+(d.xgf*100>=0?'+':'')+( d.xgf*100).toFixed(2)+'%</span>'+
+          '<span style="font-family:var(--mono);color:'+xgaColor+'">xGA +'+(d.xga*100).toFixed(2)+'%</span>'+
+          '<span style="color:var(--mu);font-size:9px">'+d.changes.map(function(c){return c.pos+' '+c.st+'→'+c.cur;}).join(', ')+'</span>'+
+        '</div>';
+      }).join('')+
+      '<div style="font-size:9px;color:var(--mu);font-family:var(--mono);margin-top:5px">'+
+        'Nämä vaikuttavat automaattisesti malliin. Muuta Analyysi-välilehdellä nähdäksesi λ-muutoksen.</div>'+
+    '</div>';
+  }
+
+  el.innerHTML = html;
+}
+
+function renderCLVByMarket() {
+  var el = document.getElementById('clvByMarket');
+  if (!el) return;
+  var mktMap = {H:'1 Koti',D:'X',A:'2 Vieras',O25:'O2.5',O35:'O3.5',U25:'U2.5',BTTS:'BTTS',AHH:'AH koti',AHA:'AH vieras'};
+  var stats = {};
+  bets.forEach(function(b) {
+    if (!b.mkt) return;
+    if (!stats[b.mkt]) stats[b.mkt]={n:0,clvSum:0,clvN:0,stake:0,profit:0,wins:0,settled:0};
+    var s=stats[b.mkt]; s.n++;
+    if(b.clv!=null){s.clvSum+=b.clv;s.clvN++;}
+    if(b.profit!=null){s.stake+=b.stake;s.profit+=b.profit;s.settled++;if(b.profit>0)s.wins++;}
+  });
+  var mkts=Object.keys(stats);
+  if(!mkts.length){
+    el.innerHTML='<div style="font-size:10px;color:var(--mu);font-family:var(--mono);padding:8px 0">Ei vetoja vielä.</div>';
+    return;
+  }
+  var html='<div class="tw"><table><thead><tr>'+
+    '<th class="L">Markkina</th><th>N</th><th>Avg CLV</th><th>ROI</th><th>Hit%</th><th>Tulkinta</th>'+
+    '</tr></thead><tbody>';
+  mkts.sort().forEach(function(mkt){
+    var s=stats[mkt];
+    var avgCLV=s.clvN>0?s.clvSum/s.clvN:null;
+    var roi=s.stake>0?s.profit/s.stake:null;
+    var hitR=s.settled>0?s.wins/s.settled:null;
+    var clvC=avgCLV==null?'var(--mu)':avgCLV>0.02?'var(--gr)':avgCLV>0?'var(--gd)':'var(--rd)';
+    var roiC=roi==null?'var(--mu)':roi>0.02?'var(--gr)':roi>0?'var(--gd)':'var(--rd)';
+    var interp='<span style="color:var(--dim)">—</span>';
+    if(avgCLV!=null&&roi!=null&&s.settled>=3){
+      if(avgCLV>0.02&&roi>0) interp='<span style="color:var(--gr)">✓ Hyvä</span>';
+      else if(avgCLV>0.02&&roi<=0) interp='<span style="color:var(--gd)">~ Hajonta</span>';
+      else if(avgCLV<=0&&roi>0) interp='<span style="color:var(--gd)">~ Tuuri</span>';
+      else interp='<span style="color:var(--rd)">✗ Lopeta</span>';
+    } else if(s.n<3){ interp='<span style="color:var(--dim)">liian vähän</span>'; }
+    html+='<tr>'+
+      '<td class="L" style="font-weight:700">'+(mktMap[mkt]||mkt)+'</td>'+
+      '<td>'+s.n+'</td>'+
+      '<td style="color:'+clvC+';font-weight:700">'+(avgCLV!=null?(avgCLV>=0?'+':'')+(avgCLV*100).toFixed(1)+'%':'—')+'</td>'+
+      '<td style="color:'+roiC+'">'+(roi!=null?(roi>=0?'+':'')+(roi*100).toFixed(1)+'%':'—')+'</td>'+
+      '<td>'+(hitR!=null?Math.round(hitR*100)+'%':'—')+'</td>'+
+      '<td>'+interp+'</td></tr>';
+  });
+  html+='</tbody></table></div>';
+  html+='<div style="font-size:9px;color:var(--mu);font-family:var(--mono);margin-top:5px;line-height:2">'+
+    '✓ Hyvä: CLV>+2%+ROI>0 · ~ Hajonta: CLV+ mutta ROI− (jatka) · ~ Tuuri: ROI+ mutta CLV− (lopeta) · ✗ Lopeta: molemmat −</div>';
+  el.innerHTML = html;
+}
+
+function mktBadge(m){var cls={H:'b1',D:'bx',A:'b2',O25:'bo',O35:'bo',U25:'bo',BTTS:'bo',AHH:'b1',AHA:'b2'};return cls[m]||'bopen';}
+function renderBetHist(){
+  var bs=bets.slice().reverse();
+  if(!bs.length){document.getElementById('betHistTable').innerHTML='<div style="font-size:10px;color:var(--mu);font-family:var(--mono);padding:8px 0">Ei kirjattuja vetoja.</div>';return;}
+  var html='<div class="tw"><table><thead><tr>'+
+    '<th class="L">K</th><th class="L">Ottelu</th><th class="L">Mkt</th>'+
+    '<th>Avaus→Oma→Sulku</th><th>Steam</th><th>CLV</th><th>Panos</th><th>Tulos</th>'+
+    '</tr></thead><tbody>';
+  bs.slice(0,15).forEach(function(b){
+    var oddsStr='';
+    if(b.opening) oddsStr='<span style="color:var(--mu)">'+b.opening.toFixed(2)+'</span><span style="color:var(--dim)">→</span>';
+    oddsStr+='<span style="font-weight:700">'+b.odds.toFixed(2)+'</span>';
+    if(b.closing) oddsStr+='<span style="color:var(--dim)">→</span><span style="color:var(--mu)">'+b.closing.toFixed(2)+'</span>';
+    var steamS='<span style="color:var(--dim)">—</span>';
+    if(b.steam!=null){
+      var sc=b.steam<-0.04?'var(--gr)':b.steam>0.04?'var(--rd)':'var(--mu)';
+      var sl=b.steam<-0.04?'↓✓':b.steam>0.04?'↑✗':'≈';
+      steamS='<span style="color:'+sc+';font-family:var(--mono)">'+(b.steam>0?'+':'')+b.steam.toFixed(2)+' '+sl+'</span>';
+    }
+    var clvS='<span style="color:var(--dim)">—</span>';
+    if(b.clv!=null){
+      var cc=b.clv>=0.02?'var(--gr)':b.clv>0?'var(--gd)':'var(--rd)';
+      clvS='<span style="color:'+cc+'">'+(b.clv>=0?'+':(b.clv*100).toFixed(1)+'%')+( b.clv>=0?(b.clv*100).toFixed(1)+'%':'')+'</span>';
+    }
+    var wlBtns=b.profit==null?
+      '<button onclick="markBetResult('+b.id+',true)" style="font-size:9px;padding:2px 5px;border-radius:3px;border:1px solid var(--grbdr);background:var(--grbg);color:var(--gr);cursor:pointer;margin-right:2px">W</button>'+
+      '<button onclick="markBetResult('+b.id+',false)" style="font-size:9px;padding:2px 5px;border-radius:3px;border:1px solid var(--rdbdr);background:var(--rdbg);color:var(--rd);cursor:pointer">L</button>':'';
+    var profS=b.profit!=null?'<span style="color:'+(b.profit>=0?'var(--gr)':'var(--rd)')+'">'+( b.profit>=0?'+':'')+b.profit.toFixed(2)+'€</span>':wlBtns;
+    html+='<tr>'+
+      '<td style="color:var(--mu)">'+b.round+'</td>'+
+      '<td class="L" style="font-size:10px;white-space:nowrap">'+b.homeN+'—'+b.awayN+'</td>'+
+      '<td class="L"><span class="badge '+mktBadge(b.mkt)+'">'+b.mkt+'</span></td>'+
+      '<td style="font-family:var(--mono);font-size:10px;white-space:nowrap">'+oddsStr+'</td>'+
+      '<td>'+steamS+'</td>'+
+      '<td>'+clvS+'</td>'+
+      '<td style="font-family:var(--mono)">'+b.stake.toFixed(0)+'€</td>'+
+      '<td>'+profS+'</td>'+
+    '</tr>';
+  });
+  html+='</tbody></table></div>';
+  html+='<div style="font-size:9px;color:var(--mu);font-family:var(--mono);margin-top:5px;line-height:1.8">'+
+    'Steam: ↓✓ = kerroin laski (sharp samaa mieltä) · ↑✗ = kerroin nousi (sharp eri mieltä) · CLV = oma÷sulku−1</div>';
+  document.getElementById('betHistTable').innerHTML=html;
+}
+
+function markBetResult(id, won){
+  var b=bets.find(function(x){return x.id===id;});
+  if(!b)return;
+  b.profit=won?b.stake*(b.odds-1):-b.stake;
+  b.result=won?'W':'L';
+  saveAll();renderBetHist();renderTrackKpi();
+}
+
+function renderTrack(){
+  var filter=document.getElementById('trkFilter').value;
+  var ms=matches.slice().reverse();
+  if(filter==='correct')ms=ms.filter(function(m){return m.modelP!=null&&((m.modelP/100>0.5&&m.result==='1')||(m.modelP/100<0.33&&m.result!=='1'));});
+  if(filter==='wrong')ms=ms.filter(function(m){return m.modelP!=null&&!((m.modelP/100>0.5&&m.result==='1'));});
+  if(filter==='rc')ms=ms.filter(function(m){return m.rc&&m.rc!=='';});
+
+  if(!ms.length){document.getElementById('trkTable').innerHTML='<div style="font-size:10px;color:var(--mu);font-family:var(--mono);padding:8px 0">Ei otteluita vielä — lisää Päivitys-välilehdellä.</div>';return;}
+  var html='<div class="tw"><table><thead><tr><th class="L">K</th><th class="L">Ottelu</th><th class="L">Tulos</th><th>xG K</th><th>xG V</th><th>Lauk K/V</th><th>Pallo%</th><th>Pun.</th><th>Brier</th><th>Sulk 1/X/2</th><th>Sulk O2.5</th></tr></thead><tbody>';
+  ms.forEach(function(m){
+    var rcS=m.rc&&m.rc!==''?'<span style="color:var(--rd)">'+m.rc+'</span>':'—';
+    var brierS=m.brier!=null?'<span style="color:'+(m.brier<0.25?'var(--gr)':m.brier<0.5?'var(--gd)':'var(--rd)')+'">'+m.brier.toFixed(3)+'</span>':'—';
+    var clS=m.cl1&&m.clX&&m.cl2?m.cl1.toFixed(2)+'/'+m.clX.toFixed(2)+'/'+m.cl2.toFixed(2):'—';
+    html+='<tr>'+
+      '<td>'+m.round+'</td>'+
+      '<td class="L"><strong>'+m.homeN+'</strong> — '+m.awayN+'</td>'+
+      '<td class="L">'+m.hg+'-'+m.ag+' <span class="badge b'+m.result.toLowerCase()+'">'+m.result+'</span></td>'+
+      '<td>'+(m.xgH!=null?m.xgH.toFixed(2):'—')+'</td>'+
+      '<td>'+(m.xgA!=null?m.xgA.toFixed(2):'—')+'</td>'+
+      '<td>'+(m.shotH!=null?m.shotH+'/'+m.shotA:'—')+'</td>'+
+      '<td>'+(m.poss!=null?m.poss+'%':'—')+'</td>'+
+      '<td>'+rcS+'</td>'+
+      '<td>'+brierS+'</td>'+
+      '<td style="font-family:var(--mono);font-size:10px">'+clS+'</td>'+
+      '<td>'+(m.clO25!=null?m.clO25.toFixed(2):'—')+'</td>'+
+    '</tr>';
+  });
+  html+='</tbody></table></div>';
+  document.getElementById('trkTable').innerHTML=html;
+}
+
+function clearBets(){if(!confirm('Tyhjennä kaikki vedot?'))return;bets=[];saveAll();renderBetHist();renderTrackKpi();}
+function clearTrack(){if(!confirm('Tyhjennä kaikki ottelut ja vedot?'))return;matches=[];bets=[];saveAll();renderTrackKpi();renderBetHist();renderTrack();}
+
+// ═══════════════ SARJATAULUKKO ═══════════════
+function calcTable() {
+  var tbl = {};
+  TN.forEach(function(t) {
+    tbl[t] = { id:t, name:TNAME[t], p:0, w:0, d:0, l:0, gf:0, ga:0, pts:0, form:[] };
+  });
+  // Lisätään myös LC2026-data alkutilanteeksi (valinnainen — kommentoi pois jos et halua)
+  // Ei lisätä LC:tä — pelkästään merkityt VL2026-ottelut
+  matches.forEach(function(m) {
+    if(!tbl[m.home] || !tbl[m.away]) return;
+    var h = tbl[m.home], a = tbl[m.away];
+    h.p++; a.p++;
+    h.gf += m.hg; h.ga += m.ag;
+    a.gf += m.ag; a.ga += m.hg;
+    if(m.hg > m.ag) {
+      h.w++; h.pts+=3; h.form.push('W');
+      a.l++; a.form.push('L');
+    } else if(m.hg === m.ag) {
+      h.d++; h.pts+=1; h.form.push('D');
+      a.d++; a.pts+=1; a.form.push('D');
+    } else {
+      h.l++; h.form.push('L');
+      a.w++; a.pts+=3; a.form.push('W');
+    }
+  });
+  return Object.values(tbl).sort(function(a,b) {
+    if(b.pts !== a.pts) return b.pts - a.pts;
+    var gdA = a.gf - a.ga, gdB = b.gf - b.ga;
+    if(gdB !== gdA) return gdB - gdA;
+    return b.gf - a.gf;
+  });
+}
+
+function formDot(r) {
+  var c = r==='W'?'var(--gr)':r==='D'?'var(--gd)':'var(--rd)';
+  return '<span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:'+c+';margin-right:2px;vertical-align:middle" title="'+r+'"></span>';
+}
+
+function renderTable() {
+  var rows = calcTable();
+  var total = matches.length;
+  var totalGoals = matches.reduce(function(s,m){return s+m.hg+m.ag;},0);
+  var avgGoals = total > 0 ? (totalGoals/total).toFixed(2) : '—';
+  var topScorer = rows.length > 0 ? rows[0] : null;
+  var bestDef = rows.slice().sort(function(a,b){return a.ga-b.ga;})[0];
+
+  document.getElementById('tableKpi').innerHTML = [
+    {l:'Kierroksia pelattu', v: total > 0 ? Math.ceil(total/6) : '0', s: total+' ottelua merkitty', c:'b'},
+    {l:'Maaleja yhteensä', v: totalGoals||'—', s:'ka '+avgGoals+'/ottelu', c:''},
+    {l:'Johtaja', v: topScorer&&topScorer.p>0 ? topScorer.name : '—', s: topScorer&&topScorer.p>0 ? topScorer.pts+'p' : 'ei dataa', c:'g'},
+    {l:'Paras puolustus', v: bestDef&&bestDef.p>0 ? bestDef.name : '—', s: bestDef&&bestDef.p>0 ? bestDef.ga+' päästettyä' : 'ei dataa', c:'gd'},
+  ].map(function(x){return'<div class="kpi '+(x.c||'')+'"><div class="kl">'+x.l+'</div><div class="kv '+(x.c||'')+'">'+x.v+'</div><div class="ks">'+x.s+'</div></div>';}).join('');
+
+  if(!total) {
+    document.getElementById('tableMain').innerHTML='<div style="font-size:10px;color:var(--mu);font-family:var(--mono);padding:10px 0">Ei tuloksia vielä — syötä otteluita Päivitys-välilehdellä.</div>';
+    document.getElementById('tableGoals').innerHTML='';
+    document.getElementById('tableRecent').innerHTML='';
+    document.getElementById('tableForm').innerHTML='';
+    return;
+  }
+
+  // Pääsarjataulukko
+  var html='<div class="tw"><table><thead><tr>'+
+    '<th class="L">#</th><th class="L">Joukkue</th>'+
+    '<th>P</th><th>V</th><th>T</th><th>H</th>'+
+    '<th>+</th><th>−</th><th>Ero</th><th>Pist.</th>'+
+    '</tr></thead><tbody>';
+  rows.forEach(function(t, i) {
+    var gd = t.gf - t.ga;
+    var promoted = i < 3, relegation = i >= rows.length-2;
+    var rowStyle = promoted ? 'border-left:3px solid var(--gr)' : relegation ? 'border-left:3px solid var(--rd)' : 'border-left:3px solid transparent';
+    html += '<tr style="'+rowStyle+'">'+
+      '<td style="color:var(--mu);text-align:left;padding-left:8px">'+(i+1)+'</td>'+
+      '<td class="L" style="font-weight:700;color:'+(i===0?'var(--gd)':'var(--tx)')+'">'+t.name+'</td>'+
+      '<td>'+t.p+'</td><td class="pos">'+t.w+'</td>'+
+      '<td style="color:var(--mu)">'+t.d+'</td>'+
+      '<td class="neg">'+t.l+'</td>'+
+      '<td>'+t.gf+'</td><td style="color:var(--mu)">'+t.ga+'</td>'+
+      '<td class="'+(gd>0?'pos':gd<0?'neg':'neu')+'">'+(gd>0?'+':'')+gd+'</td>'+
+      '<td style="font-weight:700;color:'+(i===0?'var(--gd)':'var(--tx)')+'">'+t.pts+'</td>'+
+    '</tr>';
+  });
+  html+='</tbody></table></div>';
+  html+='<div style="font-size:9px;color:var(--mu);font-family:var(--mono);margin-top:5px;display:flex;gap:12px">'+
+    '<span><span style="color:var(--gr)">■</span> Mestaruusryhmä (top 6)</span>'+
+    '<span><span style="color:var(--rd)">■</span> Putoamisryhmä (bottom 2)</span>'+
+    '</div>';
+  document.getElementById('tableMain').innerHTML = html;
+
+  // Maalitilasto
+  var goalRows = rows.slice().sort(function(a,b){return b.gf-a.gf;});
+  var maxGF = goalRows[0] ? goalRows[0].gf : 1;
+  var gHtml = goalRows.map(function(t) {
+    var w = t.p > 0 ? Math.round((t.gf/Math.max(maxGF,1))*100) : 0;
+    return '<div style="display:flex;align-items:center;gap:7px;padding:3px 0;font-size:11px">'+
+      '<span style="min-width:110px;font-weight:600">'+t.name+'</span>'+
+      '<div style="flex:1;height:12px;background:var(--s2);border-radius:3px;overflow:hidden">'+
+        '<div style="width:'+w+'%;height:100%;background:var(--gr);border-radius:3px"></div>'+
+      '</div>'+
+      '<span style="font-family:var(--mono);min-width:24px;text-align:right;color:var(--gr)">'+t.gf+'</span>'+
+      '<span style="font-family:var(--mono);min-width:20px;text-align:right;color:var(--mu)">'+( t.p>0?(t.gf/t.p).toFixed(1):'—')+'</span>'+
+    '</div>';
+  }).join('');
+  document.getElementById('tableGoals').innerHTML = gHtml || '<div style="color:var(--mu);font-size:10px">Ei dataa</div>';
+
+  // Viimeisimmät tulokset
+  var recent = matches.slice().reverse().slice(0, 8);
+  var rHtml = recent.map(function(m) {
+    var c = m.hg>m.ag?'var(--gr)':m.hg===m.ag?'var(--gd)':'var(--rd)';
+    return '<div style="display:flex;align-items:center;gap:7px;padding:4px 0;border-bottom:1px solid var(--bdr);font-size:10px">'+
+      '<span style="color:var(--mu);font-family:var(--mono);min-width:20px">K'+m.round+'</span>'+
+      '<span style="flex:1;text-align:right;font-weight:600">'+m.homeN+'</span>'+
+      '<span style="font-family:var(--mono);font-weight:700;color:'+c+';min-width:32px;text-align:center">'+m.hg+'−'+m.ag+'</span>'+
+      '<span style="flex:1;font-weight:600">'+m.awayN+'</span>'+
+    '</div>';
+  }).join('');
+  document.getElementById('tableRecent').innerHTML = rHtml || '<div style="color:var(--mu);font-size:10px">Ei dataa</div>';
+
+  // Muototaulukko
+  var fHtml = '<div class="tw"><table><thead><tr><th class="L">Joukkue</th><th class="L">Muoto (viim. 5)</th><th>V</th><th>T</th><th>H</th></tr></thead><tbody>';
+  rows.forEach(function(t) {
+    var last5 = t.form.slice(-5);
+    var wR=last5.filter(function(x){return x==='W';}).length;
+    var dR=last5.filter(function(x){return x==='D';}).length;
+    var lR=last5.filter(function(x){return x==='L';}).length;
+    fHtml += '<tr>'+
+      '<td class="L" style="font-weight:600">'+t.name+'</td>'+
+      '<td class="L">'+last5.map(formDot).join('')+'</td>'+
+      '<td class="pos">'+wR+'</td>'+
+      '<td style="color:var(--mu)">'+dR+'</td>'+
+      '<td class="neg">'+lR+'</td>'+
+    '</tr>';
+  });
+  fHtml += '</tbody></table></div>';
+  document.getElementById('tableForm').innerHTML = fHtml;
+}
+
+// ═══════════════ PELAAJADATA ═══════════════
+var PLAYER_DATA={};
+
+function importFbrefCsv(){
+  var raw=document.getElementById('fbrefCsv').value.trim();
+  if(!raw){document.getElementById('importMsg').textContent='Liitä CSV-data ensin.';return;}
+  var lines=raw.split('\n').filter(function(l){return l.trim();});
+  var headerIdx=-1,header=[];
+  for(var i=0;i<Math.min(6,lines.length);i++){
+    var h=lines[i].split(',').map(function(c){return c.toLowerCase().trim().replace(/^"|"$/g,'');});
+    if(h.indexOf('player')>=0||h.indexOf('rk')>=0){headerIdx=i;header=h;break;}
+  }
+  if(headerIdx<0){
+    document.getElementById('importMsg').style.color='var(--rd)';
+    document.getElementById('importMsg').textContent='Header ei löytynyt. Kopioi koko taulukko mukaan lukien otsikkorivi.';
+    return;
+  }
+  var iName=header.indexOf('player'),iSquad=header.indexOf('squad');
+  var iMin=header.indexOf('min');
+  var iGls=header.indexOf('gls'),iAst=header.indexOf('ast');
+  var iG90=-1,iA90=-1;
+  header.forEach(function(h,i){if(h==='gls/90'||h==='g/90')iG90=i;if(h==='ast/90'||h==='a/90')iA90=i;});
+  if(iName<0){iName=1;} // fallback
+  var imported=0;
+  for(var r=headerIdx+1;r<lines.length;r++){
+    var cols=lines[r].split(',').map(function(c){return c.trim().replace(/^"|"$/g,'');});
+    if(cols.length<3)continue;
+    var name=cols[iName]||''; if(!name||name==='Player'||name==='')continue;
+    var squad=iSquad>=0?cols[iSquad]:'';
+    var min=parseFloat((cols[iMin]||'0').replace(/[^0-9.]/g,''))||0;
+    var gls=iGls>=0?parseFloat(cols[iGls])||0:0;
+    var ast=iAst>=0?parseFloat(cols[iAst])||0:0;
+    var g90=iG90>=0?parseFloat(cols[iG90])||0:(min>0?gls/(min/90):0);
+    var a90=iA90>=0?parseFloat(cols[iA90])||0:(min>0?ast/(min/90):0);
+    var teamId=matchTeamStr(squad);
+    var key=name.toLowerCase();
+    var existing=PLAYER_DATA[key]||{};
+    PLAYER_DATA[key]={name:name,team:teamId||squad,teamId:teamId,min:min,g90:g90,a90:a90,tm:existing.tm||null,ratio:null};
+    imported++;
+  }
+  calcPlayerRatios();
+  saveAll();
+  renderPlayerDataTable();
+  document.getElementById('fbrefCsv').value='';
+  document.getElementById('importMsg').style.color='var(--gr)';
+  document.getElementById('importMsg').textContent='✓ Tuotu '+imported+' pelaajaa.';
+}
+
+function matchTeamStr(s){
+  if(!s)return null;
+  var k=s.toLowerCase().replace(/[^a-z0-9]/g,'');
+  var map={hjk:'HJK',hjkhelsinki:'HJK',ilves:'Ilves',fcilves:'Ilves',kups:'KuPS',kuopio:'KuPS',
+    fcinter:'FCInter',inter:'FCInter',interturku:'FCInter',acoulu:'ACOulu',oulu:'ACOulu',
+    sjk:'SJK',seinajoki:'SJK',gnistan:'Gnistan',ifgnistan:'Gnistan',vps:'VPS',vaasa:'VPS',
+    fclahti:'FCLahti',lahti:'FCLahti',ffjaro:'FFJaro',jaro:'FFJaro',
+    ifkmariehamn:'IFKMariehamn',mariehamn:'IFKMariehamn',tps:'TPS'};
+  // Tarkka haku
+  if(map[k])return map[k];
+  // Osittainen haku
+  for(var mk in map){if(k.includes(mk)||mk.includes(k))return map[mk];}
+  return null;
+}
+
+function calcPlayerRatios(){
+  // Laske joukkueen keskiarvo G+A/90 pelaajilta joilla riittävästi minuutteja
+  var teamScore={};
+  TN.forEach(function(t){teamScore[t]={sum:0,n:0};});
+  Object.keys(PLAYER_DATA).forEach(function(k){
+    var p=PLAYER_DATA[k];
+    if(!p.teamId||!teamScore[p.teamId]||p.min<90)return;
+    teamScore[p.teamId].sum+=(p.g90+p.a90*0.6);
+    teamScore[p.teamId].n++;
+  });
+  // Laske jokaisen pelaajan ratio suhteessa joukkueen keskiarvoon
+  Object.keys(PLAYER_DATA).forEach(function(k){
+    var p=PLAYER_DATA[k];
+    if(!p.teamId||!teamScore[p.teamId]||p.min<90){p.ratio=null;return;}
+    var ts=teamScore[p.teamId];
+    if(ts.n>0&&ts.sum>0){
+      var ps=p.g90+p.a90*0.6;
+      var avg=ts.sum/ts.n;
+      p.ratio=Math.round(Math.max(0.35,Math.min(1.20,ps/avg))*100)/100;
+    } else {
+      p.ratio=null;
+    }
+  });
+}
+
+function getPlayerRatio(playerName,teamId){
+  var key=playerName.toLowerCase();
+  if(PLAYER_DATA[key]&&PLAYER_DATA[key].ratio!=null)return PLAYER_DATA[key].ratio;
+  var parts=key.split(' '),surname=parts[parts.length-1];
+  var found=Object.keys(PLAYER_DATA).find(function(k){
+    return k.includes(surname)&&(!teamId||!PLAYER_DATA[k].teamId||PLAYER_DATA[k].teamId===teamId);
+  });
+  if(found&&PLAYER_DATA[found].ratio!=null)return PLAYER_DATA[found].ratio;
+  return null;
+}
+
+function clearPlayerData(){
+  if(!confirm('Tyhjennä kaikki pelaajadata?'))return;
+  PLAYER_DATA={};
+  saveAll();renderPlayerDataTable();
+}
+
+
+function renderPlayerDataTable(){
+  var players=Object.values(PLAYER_DATA).sort(function(a,b){return(b.ratio||0)-(a.ratio||0);});
+  if(!players.length){
+    document.getElementById('playerDataTable').innerHTML=
+      '<div style="font-size:10px;color:var(--mu);font-family:var(--mono);padding:8px 0">'+
+      'Ei dataa. Tuo FBref CSV yllä tai syötä TM-arvot.</div>';
+    return;
+  }
+  var html='<div class="tw"><table><thead><tr>'+
+    '<th class="L">Pelaaja</th><th class="L">Joukkue</th>'+
+    '<th>Min</th><th>G/90</th><th>A/90</th><th>Ratio</th><th>Kokoonpanossa</th>'+
+    '</tr></thead><tbody>';
+  players.slice(0,80).forEach(function(p){
+    var c=!p.ratio?'var(--mu)':p.ratio>=1.0?'var(--gr)':p.ratio>=0.75?'var(--gd)':'var(--rd)';
+    var inXI=false;
+    if(p.teamId&&TMAP[p.teamId]){
+      var lu=LU[p.teamId]||[];
+      inXI=lu.indexOf(p.name)>=0;
+    }
+    html+='<tr>'+
+      '<td class="L" style="font-weight:600">'+p.name+'</td>'+
+      '<td class="L" style="color:var(--mu)">'+(p.teamId?TNAME[p.teamId]:p.team||'—')+'</td>'+
+      '<td>'+Math.round(p.min)+'</td>'+
+      '<td style="font-family:var(--mono)">'+(p.g90?p.g90.toFixed(2):'—')+'</td>'+
+      '<td style="font-family:var(--mono)">'+(p.a90?p.a90.toFixed(2):'—')+'</td>'+
+
+      '<td style="color:'+c+';font-family:var(--mono);font-weight:700">'+(p.ratio?(p.ratio*100).toFixed(0)+'%':'—')+'</td>'+
+      '<td>'+(inXI?'<span style="color:var(--gr)">✓ XI</span>':'<span style="color:var(--dim)">Penkki</span>')+'</td>'+
+    '</tr>';
+  });
+  html+='</tbody></table></div>';
+  html+='<div style="font-size:9px;color:var(--mu);font-family:var(--mono);margin-top:5px;line-height:1.9">'+
+    'Ratio käytetään automaattisesti kokoonpanokorjauksessa kun pelaaja vaihdetaan · '+
+    'TM-arvo on prioriteetti G+A/90:n yli</div>';
+  document.getElementById('playerDataTable').innerHTML=html;
+}
+
+var TABS=['match','lineups','weights','nudges','asian','goals','calib','update','track','table','players'];
+function T(id){
+  TABS.forEach(function(k){document.getElementById('pane-'+k).classList.toggle('on',k===id);});
+  document.querySelectorAll('.nt').forEach(function(b,i){b.classList.toggle('on',TABS[i]===id);});
+  if(id==='lineups')renderLineups();
+  if(id==='weights'){renderWPanels();renderDecayBars();}
+  if(id==='nudges')renderNudges();
+  if(id==='asian')runAsian();
+  if(id==='goals')runGoals();
+  if(id==='calib')renderCalib();
+  if(id==='update')renderUpdateRows();
+  if(id==='track'){renderTrackKpi();renderBetHist();renderTrack();renderXGvsLambda();renderCLVByMarket();}
+  if(id==='table')renderTable();
+  if(id==='players'){renderPlayerDataTable();}
+  if(id==='match')run();
+}
+document.querySelectorAll('.nt').forEach(function(btn){
+  btn.addEventListener('click',function(){T(btn.dataset.tab);});
+});
+
+// ═══════════════ VIE/TUO DATA ═══════════════
+function exportData() {
+  var data = {
+    version: 'vl2026_v4',
+    exportedAt: new Date().toISOString(),
+    N: N, W: W, LU: LU, LU_RATIO: LU_RATIO,
+    XG: XG, BAYES: BAYES,
+    benchRatio: benchRatio, decayLambda: decayLambda, nudgeStep: nudgeStep,
+    matches: matches, bets: bets, xgLog: xgLog
+  };
+  var json = JSON.stringify(data, null, 2);
+  var blob = new Blob([json], {type:'application/json'});
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  var d = new Date();
+  a.href = url;
+  a.download = 'vl2026_data_' + d.getFullYear() + ('0'+(d.getMonth()+1)).slice(-2) + ('0'+d.getDate()).slice(-2) + '.json';
+  a.click();
+  URL.revokeObjectURL(url);
+  var el = document.getElementById('importExportMsg');
+  if(el) { el.style.color='var(--gr)'; el.textContent='✓ Viety ' + matches.length + ' ottelua, ' + bets.length + ' vetoa'; }
+}
+
+function importData(input) {
+  var file = input.files[0];
+  if (!file) return;
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      var s = JSON.parse(e.target.result);
+      if (s.version !== 'vl2026_v4') {
+        var el=document.getElementById('importExportMsg');
+        el.style.color='var(--rd)'; el.textContent='Virhe: väärä versio ('+s.version+')';
+        return;
+      }
+      if (s.N) Object.assign(N, s.N);
+      if (s.W) Object.assign(W, s.W);
+      if (s.LU) Object.assign(LU, s.LU);
+      if (s.LU_RATIO) Object.assign(LU_RATIO, s.LU_RATIO);
+      if (s.BAYES) Object.assign(BAYES, s.BAYES);
+      if (s.XG) TN.forEach(function(t){ if(s.XG[t]) Object.assign(XG[t], s.XG[t]); });
+      if (s.benchRatio != null) benchRatio = s.benchRatio;
+      if (s.decayLambda != null) decayLambda = s.decayLambda;
+      if (s.nudgeStep != null) nudgeStep = s.nudgeStep;
+      if (s.matches) matches = s.matches;
+      if (s.bets) bets = s.bets;
+      if (s.xgLog) xgLog = s.xgLog;
+      saveAll();
+      run(); renderNudges(); renderLineups(); renderTable();
+      renderTrackKpi(); renderBetHist(); renderTrack(); renderUpdateHistory();
+      var el=document.getElementById('importExportMsg');
+      el.style.color='var(--gr)';
+      el.textContent='✓ Tuotu: ' + matches.length + ' ottelua, ' + bets.length + ' vetoa, xgLog ' + xgLog.length + ' merkintää';
+    } catch(err) {
+      var el=document.getElementById('importExportMsg');
+      el.style.color='var(--rd)'; el.textContent='Virhe: ' + err.message;
+    }
+    input.value='';
+  };
+  reader.readAsText(file);
+}
+
+// ═══════════════ INIT ═══════════════
+(function(){
+  // Populate selects
+  ['mH','mA','aH','aA','gH','gA'].forEach(function(id){
+    var el=document.getElementById(id);
+    TEAMS.forEach(function(t){var o=document.createElement('option');o.value=t.id;o.textContent=t.name;el.appendChild(o);});
+  });
+  document.getElementById('mA').value='FCInter';
+  document.getElementById('aA').value='FCInter';
+  document.getElementById('gA').value='FCInter';
+  var lf=document.getElementById('luFilter');
+  TEAMS.forEach(function(t){var o=document.createElement('option');o.value=t.id;o.textContent=t.name;lf.appendChild(o);});
+
+  updDecay(8);
+  loadAll();
+  renderNudges();
+  renderDecayBars();
+  run();
+  renderLineups();
+  updateRoundInfo();
+  if(Object.keys(PLAYER_DATA).length>0){calcPlayerRatios();}
+})();
+</script>
+</body></html>
