@@ -215,6 +215,17 @@ tr:hover td{background:rgba(255,255,255,.02)}
     <span class="lbl">Kierros</span>
     <input type="number" id="roundNum" value="1" min="1" max="33" style="width:50px" onchange="updateRoundInfo();run()">
   </div>
+  <div class="ctrl" id="oddsCtrl" style="margin-top:4px;align-items:center;gap:6px;flex-wrap:wrap">
+    <span class="lbl" style="color:var(--gd)">⚡ Kerroinliike</span>
+    <span class="lbl" style="font-size:9px;color:var(--mu)">Avaus</span>
+    <input type="number" id="odvH" placeholder="Koti" step="0.01" min="1" style="width:58px;font-size:11px;background:var(--s2);border:1px solid var(--bdr);color:var(--tx);padding:3px 5px;border-radius:4px;font-family:var(--mono)" oninput="run()">
+    <input type="number" id="odvA" placeholder="Vieras" step="0.01" min="1" style="width:58px;font-size:11px;background:var(--s2);border:1px solid var(--bdr);color:var(--tx);padding:3px 5px;border-radius:4px;font-family:var(--mono)" oninput="run()">
+    <span class="lbl" style="font-size:9px;color:var(--mu)">Sulku</span>
+    <input type="number" id="scvH" placeholder="Koti" step="0.01" min="1" style="width:58px;font-size:11px;background:var(--s2);border:1px solid var(--bdr);color:var(--tx);padding:3px 5px;border-radius:4px;font-family:var(--mono)" oninput="run()">
+    <input type="number" id="scvA" placeholder="Vieras" step="0.01" min="1" style="width:58px;font-size:11px;background:var(--s2);border:1px solid var(--bdr);color:var(--tx);padding:3px 5px;border-radius:4px;font-family:var(--mono)" oninput="run()">
+    <span id="mktSignal" style="font-size:10px;font-family:var(--mono);color:var(--mu);margin-left:4px"></span>
+    <button onclick="document.getElementById('odvH').value='';document.getElementById('odvA').value='';document.getElementById('scvH').value='';document.getElementById('scvA').value='';document.getElementById('mktSignal').textContent='';run()" style="font-size:9px;padding:3px 8px;background:var(--s2);border:1px solid var(--bdr);color:var(--mu);border-radius:4px;cursor:pointer">✕ Tyhjennä</button>
+  </div>
   <div id="roundInfoStrip" class="round-info" style="display:none"></div>
   <div id="astrip" class="astrip" style="display:none"></div>
   <div id="mmeta" class="mstrip"></div>
@@ -641,7 +652,8 @@ var TNAME={}; TEAMS.forEach(function(t){TNAME[t.id]=t.name;});
 var TMAP={}; TEAMS.forEach(function(t){TMAP[t.id]=t;});
 
 // ═══════════════ MALLI-DATA ═══════════════
-var XG_DEFAULT={"HJK":{hgf:1.90,agf:1.72,hga:1.25,aga:1.52},"KuPS":{hgf:1.72,agf:1.58,hga:1.10,aga:1.28},"FCInter":{hgf:1.80,agf:1.65,hga:1.06,aga:1.12},"Ilves":{hgf:1.85,agf:1.70,hga:1.28,aga:1.37},"SJK":{hgf:1.92,agf:1.78,hga:1.45,aga:1.60},"FFJaro":{hgf:1.35,agf:1.20,hga:1.52,aga:1.68},"IFKMariehamn":{hgf:1.28,agf:1.15,hga:1.72,aga:1.60},"VPS":{hgf:1.38,agf:1.24,hga:1.55,aga:1.70},"Gnistan":{hgf:1.42,agf:1.28,hga:1.65,aga:1.92},"ACOulu":{hgf:1.32,agf:1.20,hga:1.72,aga:1.92},"FCLahti":{hgf:1.35,agf:1.28,hga:1.42,aga:1.58},"TPS":{hgf:1.32,agf:1.18,hga:1.52,aga:1.72}};
+var XG_DEFAULT={"HJK":{hgf:1.951,agf:1.895,hga:1.261,aga:1.387},"KuPS":{hgf:1.939,agf:1.511,hga:1.181,aga:1.043},"FCInter":{hgf:2.001,agf:1.408,hga:1.122,aga:1.273},"Ilves":{hgf:1.945,agf:1.731,hga:1.388,aga:1.179},"SJK":{hgf:1.829,agf:1.92,hga:1.359,aga:1.528},"FFJaro":{hgf:1.35,agf:1.2,hga:1.52,aga:1.68},"IFKMariehamn":{hgf:1.243,agf:0.981,hga:1.735,aga:1.956},"VPS":{hgf:1.516,agf:1.406,hga:1.317,aga:1.488},"Gnistan":{hgf:1.293,agf:1.501,hga:1.776,aga:1.701},"ACOulu":{hgf:1.274,agf:1.226,hga:1.342,aga:1.754},"FCLahti":{hgf:1.387,agf:0.759,hga:1.297,aga:1.939},"TPS":{hgf:1.32,agf:1.18,hga:1.52,aga:1.72}};
+var FINISHING_CORR={"HJK":{hgf:0.003,agf:0.058},"KuPS":{hgf:0.035,agf:-0.033},"FCInter":{hgf:0.115,agf:-0.145},"Ilves":{hgf:0.07,agf:-0.07},"SJK":{hgf:-0.045,agf:-0.125},"FFJaro":{hgf:0.0,agf:0.0},"IFKMariehamn":{hgf:-0.15,agf:-0.115},"VPS":{hgf:-0.15,agf:0.005},"Gnistan":{hgf:-0.005,agf:0.088},"ACOulu":{hgf:-0.05,agf:-0.062},"FCLahti":{hgf:-0.0,agf:-0.132},"TPS":{hgf:0.0,agf:0.0}};
 var XG=JSON.parse(JSON.stringify(XG_DEFAULT));
 var N_PRIOR=6; // Priori-paino = 6 virtuaalista ottelua
 var BAYES={}; TN.forEach(function(t){BAYES[t]={hgf_sum:0,hga_sum:0,agf_sum:0,aga_sum:0,home_n:0,away_n:0,lH_sum:0,lA_sum:0};});
@@ -658,11 +670,11 @@ var LC={
 "ACOulu":{p:7,gf:23,ga:8,hp:3,hgf:10,hga:1,ap:4,agf:13,aga:7},
 "FCLahti":{p:5,gf:7,ga:6,hp:2,hgf:7,hga:1,ap:3,agf:0,aga:5},
 "TPS":{p:5,gf:3,ga:14,hp:2,hgf:0,hga:5,ap:3,agf:3,aga:9}};
-var GD={"HJK":{d0:{hgf:2.4667,hga:1.8667,agf:1.9333,aga:1.4667},d8:{hgf:2.3493,hga:2.0894,agf:1.7821,aga:1.7609},d15:{hgf:2.1184,hga:2.2039,agf:1.6302,aga:2.0023}},"KuPS":{d0:{hgf:2.20,hga:1.40,agf:1.60,aga:0.867},d8:{hgf:2.343,hga:1.608,agf:1.787,aga:0.632},d15:{hgf:2.384,hga:1.671,agf:1.877,aga:0.462}},"FCInter":{d0:{hgf:1.80,hga:1.00,agf:1.733,aga:1.067},d8:{hgf:1.718,hga:1.090,agf:1.629,aga:1.263},d15:{hgf:1.666,hga:1.119,agf:1.588,aga:1.416}},"Ilves":{d0:{hgf:2.133,hga:1.467,agf:1.933,aga:1.467},d8:{hgf:2.116,hga:1.562,agf:1.930,aga:1.561},d15:{hgf:2.139,hga:1.642,agf:1.839,aga:1.642}},"SJK":{d0:{hgf:2.00,hga:1.20,agf:2.40,aga:2.20},d8:{hgf:1.971,hga:1.108,agf:2.697,aga:2.360},d15:{hgf:1.933,hga:0.999,agf:2.869,aga:2.479}},"FFJaro":{d0:{hgf:1.077,hga:1.846,agf:1.364,aga:1.182},d8:{hgf:1.211,hga:1.944,agf:1.686,aga:1.211},d15:{hgf:1.319,hga:2.013,agf:2.013,aga:1.173}},"IFKMariehamn":{d0:{hgf:1.231,hga:2.00,agf:1.091,aga:2.182},d8:{hgf:1.345,hga:1.693,agf:1.334,aga:2.466},d15:{hgf:1.468,hga:1.377,agf:1.570,aga:2.663}},"VPS":{d0:{hgf:0.917,hga:1.333,agf:1.583,aga:1.75},d8:{hgf:0.875,hga:1.409,agf:1.307,aga:1.750},d15:{hgf:0.893,hga:1.535,agf:1.062,aga:1.769}},"Gnistan":{d0:{hgf:1.40,hga:2.067,agf:1.60,aga:2.20},d8:{hgf:1.417,hga:2.342,agf:1.554,aga:2.226},d15:{hgf:1.457,hga:2.533,agf:1.415,aga:2.215}},"ACOulu":{d0:{hgf:1.273,hga:2.182,agf:1.154,aga:1.846},d8:{hgf:1.374,hga:1.937,agf:1.136,aga:1.710},d15:{hgf:1.490,hga:1.690,agf:1.080,aga:1.630}},"FCLahti":{d0:{hgf:1.00,hga:1.818,agf:1.231,aga:1.923},d8:{hgf:0.889,hga:1.885,agf:1.126,aga:1.855},d15:{hgf:0.812,hga:1.887,agf:1.047,aga:1.803}},"TPS":{d0:{hgf:1.20,hga:1.65,agf:1.00,aga:1.92},d8:{hgf:1.10,hga:1.601,agf:0.93,aga:1.87},d15:{hgf:0.98,hga:1.52,agf:0.86,aga:1.81}}};
-var HE={"HJK":1.242,"KuPS":1.20,"FCInter":1.143,"Ilves":1.000,"SJK":0.892,"FFJaro":0.782,"IFKMariehamn":1.176,"VPS":1.050,"Gnistan":0.958,"ACOulu":1.017,"FCLahti":1.10,"TPS":1.05};
+var GD={"HJK":{d0:{hgf:1.979,hga:1.473,agf:2.363,aga:1.475},d8:{hgf:1.912,hga:1.337,agf:2.004,aga:1.413},d15:{hgf:1.861,hga:1.261,agf:1.955,aga:1.387}},"KuPS":{d0:{hgf:2.021,hga:1.411,agf:1.647,aga:1.042},d8:{hgf:2.015,hga:1.197,agf:1.586,aga:1.033},d15:{hgf:1.919,hga:1.181,agf:1.536,aga:1.043}},"FCInter":{d0:{hgf:2.061,hga:1.103,agf:1.821,aga:1.144},d8:{hgf:1.966,hga:1.087,agf:1.62,aga:1.229},d15:{hgf:1.931,hga:1.122,agf:1.553,aga:1.273}},"Ilves":{d0:{hgf:1.77,hga:1.387,agf:2.131,aga:1.166},d8:{hgf:1.875,hga:1.341,agf:1.851,aga:1.136},d15:{hgf:1.795,hga:1.388,agf:1.801,aga:1.179}},"SJK":{d0:{hgf:1.898,hga:1.493,agf:2.154,aga:1.618},d8:{hgf:1.908,hga:1.404,agf:1.95,aga:1.623},d15:{hgf:1.829,hga:1.359,agf:1.902,aga:1.528}},"FFJaro":{d0:{hgf:1.077,hga:1.846,agf:1.364,aga:1.182},d8:{hgf:1.211,hga:1.944,agf:1.686,aga:1.211},d15:{hgf:1.319,hga:2.013,agf:2.013,aga:1.173}},"IFKMariehamn":{d0:{hgf:1.066,hga:1.941,agf:0.928,aga:2.274},d8:{hgf:1.182,hga:1.779,agf:1.008,aga:2.07},d15:{hgf:1.203,hga:1.735,agf:1.074,aga:1.956}},"VPS":{d0:{hgf:1.496,hga:1.369,agf:1.212,aga:1.623},d8:{hgf:1.688,hga:1.358,agf:1.324,aga:1.576},d15:{hgf:1.666,hga:1.317,agf:1.321,aga:1.488}},"Gnistan":{d0:{hgf:1.249,hga:2.107,agf:1.513,aga:1.863},d8:{hgf:1.297,hga:1.781,agf:1.47,aga:1.692},d15:{hgf:1.283,hga:1.776,agf:1.461,aga:1.701}},"ACOulu":{d0:{hgf:1.375,hga:1.539,agf:1.15,aga:1.439},d8:{hgf:1.263,hga:1.307,agf:1.241,aga:1.751},d15:{hgf:1.279,hga:1.342,agf:1.271,aga:1.754}},"FCLahti":{d0:{hgf:1.391,hga:1.318,agf:0.714,aga:2.009},d8:{hgf:1.391,hga:1.318,agf:0.714,aga:2.009},d15:{hgf:1.387,hga:1.297,agf:0.892,aga:1.939}},"TPS":{d0:{hgf:1.2,hga:1.65,agf:1.0,aga:1.92},d8:{hgf:1.1,hga:1.601,agf:0.93,aga:1.87},d15:{hgf:0.98,hga:1.52,agf:0.86,aga:1.81}}};
+var HE={"HJK":1.1751,"KuPS":1.2119,"FCInter":1.2193,"Ilves":1.1336,"SJK":1.1549,"FFJaro":0.782,"IFKMariehamn":0.7598,"VPS":1.0521,"Gnistan":0.8098,"ACOulu":0.8073,"FCLahti":0.876,"TPS":1.0};
 var TM={"HJK":6750,"KuPS":4680,"Ilves":3900,"SJK":3850,"FCInter":3830,"ACOulu":2950,"Gnistan":2930,"FCLahti":2300,"IFKMariehamn":2080,"VPS":2080,"FFJaro":1430,"TPS":1350};
 var H2H={"HJK|KuPS":{c:-0.15},"HJK|FCInter":{c:0.07},"HJK|Ilves":{c:0.08},"HJK|SJK":{c:0.07},"HJK|FFJaro":{c:0.08},"HJK|IFKMariehamn":{c:0.15},"HJK|VPS":{c:0.15},"HJK|Gnistan":{c:-0.08},"HJK|ACOulu":{c:0.10},"HJK|FCLahti":{c:0.15},"HJK|TPS":{c:0.13},"KuPS|HJK":{c:0.12},"KuPS|FCInter":{c:0.15},"KuPS|Ilves":{c:0.08},"KuPS|SJK":{c:0.15},"KuPS|IFKMariehamn":{c:0.15},"KuPS|VPS":{c:0.15},"KuPS|Gnistan":{c:0.14},"KuPS|ACOulu":{c:0.15},"KuPS|FCLahti":{c:0.08},"KuPS|TPS":{c:0.12},"FCInter|HJK":{c:-0.15},"FCInter|KuPS":{c:-0.15},"FCInter|Ilves":{c:0.14},"FCInter|SJK":{c:0.07},"FCInter|IFKMariehamn":{c:0.10},"FCInter|VPS":{c:0.10},"FCInter|Gnistan":{c:0.15},"FCInter|ACOulu":{c:0.15},"FCInter|FCLahti":{c:0.08},"FCInter|TPS":{c:0.15},"Ilves|HJK":{c:-0.11},"Ilves|KuPS":{c:0.08},"Ilves|FCInter":{c:0.08},"Ilves|SJK":{c:-0.11},"Ilves|IFKMariehamn":{c:0.15},"Ilves|VPS":{c:0.10},"Ilves|Gnistan":{c:-0.08},"Ilves|ACOulu":{c:0.08},"Ilves|FCLahti":{c:0.14},"Ilves|TPS":{c:0.15},"SJK|HJK":{c:-0.15},"SJK|KuPS":{c:-0.08},"SJK|FCInter":{c:0.00},"SJK|Ilves":{c:0.15},"SJK|IFKMariehamn":{c:0.15},"SJK|VPS":{c:-0.13},"SJK|Gnistan":{c:0.14},"SJK|ACOulu":{c:0.08},"SJK|TPS":{c:0.15},"FFJaro|HJK":{c:-0.15},"FFJaro|KuPS":{c:-0.08},"FFJaro|FCInter":{c:-0.15},"FFJaro|Ilves":{c:-0.08},"FFJaro|SJK":{c:-0.15},"FFJaro|IFKMariehamn":{c:-0.15},"FFJaro|ACOulu":{c:-0.08},"FFJaro|TPS":{c:-0.15},"IFKMariehamn|HJK":{c:-0.15},"IFKMariehamn|KuPS":{c:-0.15},"IFKMariehamn|FCInter":{c:-0.15},"IFKMariehamn|SJK":{c:-0.15},"IFKMariehamn|VPS":{c:-0.15},"IFKMariehamn|ACOulu":{c:0.08},"IFKMariehamn|TPS":{c:0.15},"VPS|HJK":{c:-0.15},"VPS|KuPS":{c:-0.15},"VPS|FCInter":{c:-0.08},"VPS|Ilves":{c:-0.08},"VPS|SJK":{c:-0.13},"VPS|ACOulu":{c:0.10},"Gnistan|HJK":{c:-0.15},"Gnistan|KuPS":{c:-0.15},"Gnistan|FCInter":{c:-0.08},"Gnistan|Ilves":{c:-0.15},"Gnistan|SJK":{c:-0.15},"Gnistan|IFKMariehamn":{c:0.15},"Gnistan|ACOulu":{c:0.15},"ACOulu|HJK":{c:-0.15},"ACOulu|KuPS":{c:-0.15},"ACOulu|FCInter":{c:0.14},"ACOulu|Ilves":{c:-0.15},"ACOulu|SJK":{c:-0.15},"ACOulu|IFKMariehamn":{c:-0.08},"FCLahti|HJK":{c:-0.15},"FCLahti|KuPS":{c:-0.15},"FCLahti|FCInter":{c:-0.08},"FCLahti|Ilves":{c:-0.08},"FCLahti|SJK":{c:-0.08},"FCLahti|VPS":{c:-0.15},"FCLahti|TPS":{c:0.15},"TPS|HJK":{c:-0.15},"TPS|KuPS":{c:-0.08},"TPS|FCInter":{c:-0.08},"TPS|Ilves":{c:-0.15},"TPS|SJK":{c:-0.08},"TPS|IFKMariehamn":{c:-0.11},"TPS|VPS":{c:0.08},"TPS|FCLahti":{c:0.14}};
-var LGA_AVG=1.475, GLOBAL_HE=1.0173, RHO=-0.08, NB_PHI=1.098;
+var LGA_AVG=1.537, GLOBAL_HE=0.9985, RHO=-0.08, NB_PHI=1.098;
 var LC_AVG=TN.reduce(function(s,t){return s+LC[t].gf/LC[t].p;},0)/TN.length;
 var PR={balanced:{d:[65,30,5],o:{}},lc:{d:[30,65,5],o:{}},xg:{d:[80,15,5],o:{}},new:{d:[55,40,5],o:{}}};
 var POS_W={ATT:{xgf:0.85,xga:0.15},MID:{xgf:0.55,xga:0.45},DEF:{xgf:0.25,xga:0.75},GK:{xgf:0,xga:1}};
@@ -671,7 +683,7 @@ var POS_W={ATT:{xgf:0.85,xga:0.15},MID:{xgf:0.55,xga:0.45},DEF:{xgf:0.25,xga:0.7
 var N={}; TN.forEach(function(t){N[t]=0;}); // Kaikki nudget nollattu — lisää laadullisten havaintojen mukaan
 var W={}; TN.forEach(function(t){W[t]=[65,30,5];});
 // Oletuspainotus kauden alussa: xG 65% / LC 30% / GD 5%
-// GD on VL2025-historiadataa eikä kuvaa nykyjoukkueita luotettavasti — pidetään minimissä
+// GD on VL2023-2025-historiadataa (painot: 2025×1.0, 2024×0.6, 2023×0.3)
 // LC on xG-pohjaista neutraalikentän dataa — luotettavin tuore signaali
 // Bayesian posterior päivittää xG-komponentin automaattisesti VL2026-datan kertyessä
 // Muuta joukkuekohtaisesti Painotukset-välilehdellä laadullisten havaintojen mukaan
@@ -749,7 +761,7 @@ function getLcReliability(tid) {
 }
 
 function getLambdas(hn,an){
-  var wx=W[hn]||[40,30,30], wa=W[an]||[40,30,30];
+  var wx=W[hn]||[55,30,15], wa=W[an]||[55,30,15];
   var nx=N[hn]||0, na=N[an]||0;
   // Dynaaminen HE: pienenee kauden edetessä
   // Tutkimus: kotietu pienenee ~10-15% koko kauden aikana (Wilkens 2026)
@@ -818,7 +830,33 @@ function getLambdas(hn,an){
   var h2hF=1+h2hC;
   var lH=Math.max(0.1,attH*defA*LGA_AVG*he*h2hF);
   var lA=Math.max(0.1,attA*defH*LGA_AVG/h2hF);
-  return{lH:lH,lA:lA,h2hC:h2hC,luH:luH,luA:luA,wH:wH,wA:wA};
+
+  // ── Kerroinliike-signaali ─────────────────────────────────────
+  // Jos markkina on liikkunut selvästi avauksen jälkeen, se sisältää
+  // tietoa (loukkaantumiset, kokoonpano) jota malli ei muuten näe.
+  // Lähde: 2023-24 VL-data: iso liike kotiin → 70.8% kotivoitto vs 43.4% baseline
+  var odvH=parseFloat((document.getElementById('odvH')||{value:''}).value)||0;
+  var odvA=parseFloat((document.getElementById('odvA')||{value:''}).value)||0;
+  var scvH=parseFloat((document.getElementById('scvH')||{value:''}).value)||0;
+  var scvA=parseFloat((document.getElementById('scvA')||{value:''}).value)||0;
+  var mktAdj=1.0;
+  if(odvH>0&&scvH>0&&odvA>0&&scvA>0){
+    // Muunna kertoimet todennäköisyyksiksi (ei marginaalia)
+    var rawOdvH=1/odvH, rawOdvA=1/odvA;
+    var rawScvH=1/scvH, rawScvA=1/scvA;
+    var tot0=rawOdvH+rawOdvA, tot1=rawScvH+rawScvA;
+    var p0H=rawOdvH/tot0, p1H=rawScvH/tot1;
+    var move=p1H-p0H; // positiivinen = markkina siirtynyt kotiin
+    // Painota: 4% liike = pieni efekti, 8%+ = selvä signaali
+    var mktStrength=Math.min(Math.abs(move)/0.08,1.0); // 0→1 skaalaus
+    var mktDir=(move>0)?1:-1;
+    var mktEffect=1+mktDir*mktStrength*0.12; // max ±12% lambda-muutos
+    if(move>0.04){lH*=mktEffect; lA/=mktEffect;}       // markkina → koti
+    else if(move<-0.04){lA*=(1+mktStrength*0.12); lH/=(1+mktStrength*0.12);} // markkina → vieras
+    mktAdj=mktEffect;
+  }
+
+  return{lH:lH,lA:lA,h2hC:h2hC,luH:luH,luA:luA,wH:wH,wA:wA,mktAdj:mktAdj};
 }
 
 function matchProbs(hn,an){
@@ -858,6 +896,26 @@ function run(){
   var mp=matchProbs(hn,an);
   lastMP=mp;
   var pH=mp.pH,pD=mp.pD,pA=mp.pA,lH=mp.lH,lA=mp.lA,mat=mp.mat,tot=mp.tot||1;
+
+  // Näytä kerroinliike-signaali
+  var sigEl=document.getElementById('mktSignal');
+  if(sigEl){
+    var odvH=parseFloat((document.getElementById('odvH')||{value:''}).value)||0;
+    var scvH=parseFloat((document.getElementById('scvH')||{value:''}).value)||0;
+    var odvA=parseFloat((document.getElementById('odvA')||{value:''}).value)||0;
+    var scvA=parseFloat((document.getElementById('scvA')||{value:''}).value)||0;
+    if(odvH>0&&scvH>0&&odvA>0&&scvA>0){
+      var p0H=(1/odvH)/((1/odvH)+(1/odvA));
+      var p1H=(1/scvH)/((1/scvH)+(1/scvA));
+      var move=p1H-p0H;
+      var pct=Math.round(Math.abs(move)*100);
+      var dir=move>0?'→ KOTI':'→ VIERAS';
+      var col=Math.abs(move)>=0.08?'var(--rd)':Math.abs(move)>=0.04?'var(--gd)':'var(--mu)';
+      var str=Math.abs(move)<0.02?'(ei signaalia)':Math.abs(move)<0.04?'(heikko)':Math.abs(move)<0.08?'(selvä)':'(vahva)';
+      sigEl.style.color=col;
+      sigEl.textContent=(move!==0?(pct+'% '+dir+' '+str):'');
+    } else { sigEl.textContent=''; }
+  }
 
   // Active strip
   var strips=[];
